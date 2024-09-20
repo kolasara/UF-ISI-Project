@@ -8,7 +8,7 @@
 - Alejandro Androuin:
 
 **Tools:**
-- flutter
+- flutter 3.24 & dart 3.5 programming language/UI framework
 
 **Installation:**
 
