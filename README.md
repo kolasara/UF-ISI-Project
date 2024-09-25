@@ -9,7 +9,7 @@
 
 **Tools:**
 - flutter 3.24 & dart 3.5 programming language/UI framework frontend
-- FastAPI 0.1550.0 backend
+- FastAPI 0.155.0 backend
 - PostgreSQL 16.4 db
 
 **Installation:**
