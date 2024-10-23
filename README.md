@@ -9,8 +9,8 @@
 
 **Tools:**
 - flutter 3.24 & dart 3.5 programming language/UI framework frontend
-- FastAPI 0.155.0 backend
-- PostgreSQL 16.4 db
+- Firebase authentication
+- Firestore database
 
 **Installation:**
 
@@ -26,8 +26,13 @@
 - Notification moudle
 - search bar/fliter
 
-backend
+**backend**
 - notifications dispatcher
 - class database
 - student/TA account
 - professor account
+
+**Testing**
+- Email: test@gmail.com
+- Password: test1234
+
