@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "737368781919",
+    "project_id": "studysync-ebd5d",
+    "storage_bucket": "studysync-ebd5d.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:737368781919:android:17185f774465c5394257ea",
+        "android_client_info": {
+          "package_name": "com.gatorgurus.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDYGNJfh2JGRRYPQ41Gg8X0iE7MTsT4tm8"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
