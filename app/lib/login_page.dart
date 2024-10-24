@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'home_page.dart';
 import 'register_page.dart';
+import 'study_sync_home.dart';
 
 class LoginPage extends StatefulWidget {
   @override
@@ -23,7 +24,7 @@ class _LoginPageState extends State<LoginPage> {
         );
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(builder: (context) => HomePage(user: user.user)),
+          MaterialPageRoute(builder: (context) => StudySyncHomePage()),
         );
       } catch (e) {
         showDialog(
