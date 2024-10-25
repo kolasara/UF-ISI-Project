@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:table_calendar/table_calendar.dart';
+import 'search_field.dart';
 
 class StudySyncHomePage extends StatefulWidget {
   @override
@@ -22,7 +23,12 @@ class _StudySyncHomePageState extends State<StudySyncHomePage> {
         actions: [
           IconButton(
             icon: Icon(Icons.search),
-            onPressed: () {},
+            onPressed: () {
+              showSearch(
+                context: context,
+                delegate: SearchField(),
+              );
+            },
           ),
         ],
       ),
