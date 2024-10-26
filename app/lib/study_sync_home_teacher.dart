@@ -1,28 +1,18 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:table_calendar/table_calendar.dart';
 import 'search_field.dart';
 
-class StudySyncHomePage extends StatefulWidget {
+class StudySyncHomePageTeacher extends StatefulWidget {
   @override
-  _StudySyncHomePageState createState() => _StudySyncHomePageState();
+  _StudySyncHomePageStateTeacher createState() => _StudySyncHomePageStateTeacher();
 }
 
-class _StudySyncHomePageState extends State<StudySyncHomePage> {
+class _StudySyncHomePageStateTeacher extends State<StudySyncHomePageTeacher> {
   DateTime _selectedDay = DateTime.now();
-
-  final Map<DateTime, List<Map<String, String>>> _schedule = {
-    DateTime(2024, 10, 26): [
-      {"title": "COP4600", "time": "9:35-10:25"},
-    ],
-    DateTime(2024, 10, 22): [
-      {"title": "CEN3101", "time": "11:35-12:25"},
-    ],
-
+  Map<DateTime, List<String>> _schedule = {
+    // connect to the schedule here
   };
-
-  DateTime _normDate(DateTime date) {
-    return DateTime(date.year, date.month, date.day);
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -41,7 +31,6 @@ class _StudySyncHomePageState extends State<StudySyncHomePage> {
               );
             },
           ),
-
         ],
       ),
       body: Column(
@@ -73,9 +62,10 @@ class _StudySyncHomePageState extends State<StudySyncHomePage> {
         ],
       ),
 
+      // add the addition button for teachers
       floatingActionButton: FloatingActionButton(
-        onPressed: () => _ShowFilterWindow(context),
-        child: Icon(Icons.filter_list),
+        onPressed: () => _openAddClass(context),
+        child: Icon(Icons.add_circle),
         backgroundColor: Colors.blueGrey,
       ),
 
@@ -85,10 +75,13 @@ class _StudySyncHomePageState extends State<StudySyncHomePage> {
             icon: Icon(Icons.home),
             label: 'Home',
           ),
+
           BottomNavigationBarItem(
             icon: Icon(Icons.notifications),
             label: 'Notifications',
           ),
+
+
           BottomNavigationBarItem(
             icon: Icon(Icons.list),
             label: 'To-Do',
@@ -104,53 +97,15 @@ class _StudySyncHomePageState extends State<StudySyncHomePage> {
     );
   }
 
-  // add the filter function here with dummy data
-  void _ShowFilterWindow(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: Text('Filtering'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              CheckboxListTile(
-                title: Text('Class #1'),
-                value: false,
-                onChanged: (bool? value) {
-
-                },
-              ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              child: Text('Apply'),
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
-            ),
-            TextButton(
-              child: Text('Cancel'),
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
-            )
-          ],
-        );
-      }
-    );
-  }
-
-
   // Helper function to build schedule tiles for the selected day
   List<Widget> _buildScheduleForSelectedDay(DateTime selectedDay) {
-    final normalizedDay = _normDate(selectedDay);
-    if (_schedule.containsKey(normalizedDay)) {
-      return _schedule[normalizedDay]!.map((event) {
-        return _buildScheduleTile(event["title"]!, event["time"]!);
+    if (_schedule[selectedDay] != null) {
+      // If there is a schedule for the selected day, show the events
+      return _schedule[selectedDay]!.map((event) {
+        return _buildScheduleTile(event, 'xx:xx - yy:yy'); // Placeholder for time
       }).toList();
     } else {
+      // If no events are scheduled, show an empty message
       return [Center(child: Text("No events for this day"))];
     }
   }
@@ -176,4 +131,50 @@ class _StudySyncHomePageState extends State<StudySyncHomePage> {
       ),
     );
   }
+
+  void _openAddClass(BuildContext context) {
+    TextEditingController classController = TextEditingController();
+    TextEditingController timeController = TextEditingController();
+
+    showDialog(
+        context: context,
+        builder: (BuildContext context) {
+          return AlertDialog(
+            title: Text('Add Information'),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextField(
+                  controller: classController,
+                  decoration: InputDecoration(labelText: 'Class'),
+                ),
+                TextField(
+                  controller: timeController,
+                  decoration: InputDecoration(labelText: 'Time'),
+                ),
+              ],
+            ),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  _saveInfo(classController.text, timeController.text);
+                  Navigator.of(context).pop();
+                },
+                child: Text('Save'),
+              ),
+            ],
+          );
+        }
+    );
+  }
+
+  void _saveInfo(String title, String time) {
+    FirebaseFirestore.instance.collection('classes info').add({
+      'title': title,
+      'time': time,
+      'date': _selectedDay,
+    });
+  }
+
+
 }

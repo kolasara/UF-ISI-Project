@@ -1,3 +1,4 @@
+import 'package:app/study_sync_home_teacher.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
@@ -45,13 +46,13 @@ class MyApp extends StatelessWidget {
         useMaterial3: true,
       ),
       home: LoginPage(),
-      // home: StudySyncHomePage(),
+      //home: StudySyncHomePage(),
     );
   }
 }
 
-class MyHomePage extends StatefulWidget {
-  const MyHomePage({super.key, required this.title});
+class StudySyncHomePage extends StatefulWidget {
+  const StudySyncHomePage({super.key, required this.title});
 
   // This widget is the home page of your application. It is stateful, meaning
   // that it has a State object (defined below) that contains fields that affect
@@ -65,10 +66,10 @@ class MyHomePage extends StatefulWidget {
   final String title;
 
   @override
-  State<MyHomePage> createState() => _MyHomePageState();
+  State<StudySyncHomePage> createState() => _StudySyncHomePage();
 }
 
-class _MyHomePageState extends State<MyHomePage> {
+class _StudySyncHomePage extends State<StudySyncHomePage> {
   int _counter = 0;
 
   void _incrementCounter() {

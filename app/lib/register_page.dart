@@ -1,7 +1,10 @@
+import 'package:app/study_sync_home.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'home_page.dart';
+import 'study_sync_home.dart';
+import 'study_sync_home_teacher.dart';
+
 
 class RegisterPage extends StatefulWidget {
   @override
@@ -14,6 +17,8 @@ class _RegisterPageState extends State<RegisterPage> {
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
   late String _name, _email, _password;
 
+  String _role = 'Student';
+
   Future<void> _register() async {
     if (_formKey.currentState!.validate()) {
       _formKey.currentState!.save();
@@ -25,11 +30,20 @@ class _RegisterPageState extends State<RegisterPage> {
         await _firestore.collection('users').doc(user.user!.uid).set({
           'name': _name,
           'email': _email,
+          'role': _role,
         });
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (context) => HomePage(user: user.user)),
-        );
+        if(_role == 'Student') {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (context) => StudySyncHomePage()),
+          );
+        }
+        else {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (context) => StudySyncHomePageTeacher()),
+          );
+        }
       } catch (e) {
         showDialog(
           context: context,
@@ -68,6 +82,40 @@ class _RegisterPageState extends State<RegisterPage> {
                 decoration: InputDecoration(labelText: 'Password'),
                 obscureText: true,
                 onSaved: (input) => _password = input!,
+              ),
+              SizedBox(height: 20),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  OutlinedButton(
+                      onPressed: () {
+                        setState(() {
+                          _role = 'Student';
+                        });
+                      },
+                      style: OutlinedButton.styleFrom(
+                        backgroundColor: _role == 'Student'
+                            ? Colors.blueGrey
+                            : null,
+                      ),
+                      child: Text('Student')
+                  ),
+                  SizedBox(width: 10),
+                  OutlinedButton(
+                    onPressed: () {
+                      setState(() {
+                        _role = 'Teacher';
+                      });
+                    },
+                    style: OutlinedButton.styleFrom(
+                      backgroundColor: _role == 'Teacher'
+                          ? Colors.blueGrey
+                          : null,
+                    ),
+                    child: Text('Teacher'),
+                  ),
+                ],
+
               ),
               ElevatedButton(
                 onPressed: _register,

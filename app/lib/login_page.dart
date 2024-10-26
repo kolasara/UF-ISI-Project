@@ -1,8 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'home_page.dart';
+import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'register_page.dart';
 import 'study_sync_home.dart';
+import 'study_sync_home_teacher.dart';
+
+
 
 class LoginPage extends StatefulWidget {
   @override
@@ -11,8 +17,11 @@ class LoginPage extends StatefulWidget {
 
 class _LoginPageState extends State<LoginPage> {
   final FirebaseAuth _auth = FirebaseAuth.instance;
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
   late String _email, _password;
+
+  // set a default role in order to create the buttons below for student/teacher log in
 
   Future<void> _login() async {
     if (_formKey.currentState!.validate()) {
@@ -22,10 +31,22 @@ class _LoginPageState extends State<LoginPage> {
           email: _email,
           password: _password,
         );
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (context) => StudySyncHomePage()),
-        );
+
+        DocumentSnapshot userDoc = await _firestore.collection('users').doc(user.user!.uid).get();
+        String role = userDoc['role'];
+
+        if(role == 'Student') {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (context) => StudySyncHomePage()),
+          );
+        }
+        else {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (context) => StudySyncHomePageTeacher()),
+          );
+        }
       } catch (e) {
         showDialog(
           context: context,
@@ -47,6 +68,8 @@ class _LoginPageState extends State<LoginPage> {
         child: Form(
           key: _formKey,
           child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisAlignment: MainAxisAlignment.start,
             children: <Widget>[
               TextFormField(
                 validator: (input) => input!.isEmpty ? 'Enter Email' : null,
@@ -60,19 +83,27 @@ class _LoginPageState extends State<LoginPage> {
                 obscureText: true,
                 onSaved: (input) => _password = input!,
               ),
-              ElevatedButton(
-                onPressed: _login,
-                child: Text('Login'),
-              ),
-              TextButton(
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (context) => RegisterPage()),
-                  );
-                },
-                child: Text('Register here'),
-              ),
+              Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    ElevatedButton(
+                      onPressed: _login,
+                      child: Text('Login'),
+                    ),
+                    TextButton(
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (context) => RegisterPage()),
+                        );
+                      },
+                      child: Text('Register here'),
+                    ),
+                  ],
+                ),
+              )
+
             ],
           ),
         ),
