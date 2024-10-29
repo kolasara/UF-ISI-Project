@@ -1,10 +1,8 @@
-import 'package:app/study_sync_home.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'study_sync_home.dart';
-import 'study_sync_home_teacher.dart';
-
+import 'study_sync_home_page.dart';
+import 'user_service.dart';
 
 class RegisterPage extends StatefulWidget {
   @override
@@ -15,35 +13,30 @@ class _RegisterPageState extends State<RegisterPage> {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
-  late String _name, _email, _password;
+  late String name, email, password;
 
-  String _role = 'Student';
+  String role = 'Student';
 
   Future<void> _register() async {
     if (_formKey.currentState!.validate()) {
       _formKey.currentState!.save();
       try {
         UserCredential user = await _auth.createUserWithEmailAndPassword(
-          email: _email,
-          password: _password,
+          email: email,
+          password: password,
         );
         await _firestore.collection('users').doc(user.user!.uid).set({
-          'name': _name,
-          'email': _email,
-          'role': _role,
+          'name': name,
+          'email': email,
+          'role': role,
         });
-        if(_role == 'Student') {
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(builder: (context) => StudySyncHomePage()),
-          );
-        }
-        else {
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(builder: (context) => StudySyncHomePageTeacher()),
-          );
-        }
+
+        await UserService().fetchUserData(user.user!.uid);
+
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => HomePage()),
+        );
       } catch (e) {
         showDialog(
           context: context,
@@ -69,19 +62,19 @@ class _RegisterPageState extends State<RegisterPage> {
               TextFormField(
                 validator: (input) => input!.isEmpty ? 'Enter Name' : null,
                 decoration: InputDecoration(labelText: 'Name'),
-                onSaved: (input) => _name = input!,
+                onSaved: (input) => name = input!,
               ),
               TextFormField(
                 validator: (input) => input!.isEmpty ? 'Enter Email' : null,
                 decoration: InputDecoration(labelText: 'Email'),
-                onSaved: (input) => _email = input!,
+                onSaved: (input) => email = input!,
               ),
               TextFormField(
                 validator: (input) =>
                     input!.length < 6 ? 'Provide Minimum 6 Characters' : null,
                 decoration: InputDecoration(labelText: 'Password'),
                 obscureText: true,
-                onSaved: (input) => _password = input!,
+                onSaved: (input) => password = input!,
               ),
               SizedBox(height: 20),
               Row(
@@ -90,32 +83,28 @@ class _RegisterPageState extends State<RegisterPage> {
                   OutlinedButton(
                       onPressed: () {
                         setState(() {
-                          _role = 'Student';
+                          role = 'Student';
                         });
                       },
                       style: OutlinedButton.styleFrom(
-                        backgroundColor: _role == 'Student'
-                            ? Colors.blueGrey
-                            : null,
+                        backgroundColor:
+                            role == 'Student' ? Colors.blueGrey : null,
                       ),
-                      child: Text('Student')
-                  ),
+                      child: Text('Student')),
                   SizedBox(width: 10),
                   OutlinedButton(
                     onPressed: () {
                       setState(() {
-                        _role = 'Teacher';
+                        role = 'Teacher';
                       });
                     },
                     style: OutlinedButton.styleFrom(
-                      backgroundColor: _role == 'Teacher'
-                          ? Colors.blueGrey
-                          : null,
+                      backgroundColor:
+                          role == 'Teacher' ? Colors.blueGrey : null,
                     ),
                     child: Text('Teacher'),
                   ),
                 ],
-
               ),
               ElevatedButton(
                 onPressed: _register,

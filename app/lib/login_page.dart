@@ -1,14 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'home_page.dart';
-import 'package:flutter/material.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'register_page.dart';
-import 'study_sync_home.dart';
-import 'study_sync_home_teacher.dart';
-
-
+import 'study_sync_home_page.dart';
+import 'user_service.dart';
 
 class LoginPage extends StatefulWidget {
   @override
@@ -17,7 +11,6 @@ class LoginPage extends StatefulWidget {
 
 class _LoginPageState extends State<LoginPage> {
   final FirebaseAuth _auth = FirebaseAuth.instance;
-  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
   late String _email, _password;
 
@@ -32,21 +25,12 @@ class _LoginPageState extends State<LoginPage> {
           password: _password,
         );
 
-        DocumentSnapshot userDoc = await _firestore.collection('users').doc(user.user!.uid).get();
-        String role = userDoc['role'];
+        await UserService().fetchUserData(user.user!.uid);
 
-        if(role == 'Student') {
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(builder: (context) => StudySyncHomePage()),
-          );
-        }
-        else {
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(builder: (context) => StudySyncHomePageTeacher()),
-          );
-        }
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => HomePage()),
+        );
       } catch (e) {
         showDialog(
           context: context,
@@ -95,7 +79,8 @@ class _LoginPageState extends State<LoginPage> {
                       onPressed: () {
                         Navigator.push(
                           context,
-                          MaterialPageRoute(builder: (context) => RegisterPage()),
+                          MaterialPageRoute(
+                              builder: (context) => RegisterPage()),
                         );
                       },
                       child: Text('Register here'),
@@ -103,7 +88,6 @@ class _LoginPageState extends State<LoginPage> {
                   ],
                 ),
               )
-
             ],
           ),
         ),
