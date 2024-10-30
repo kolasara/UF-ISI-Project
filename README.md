@@ -33,7 +33,7 @@
 - professor account
 
 **Testing**
-Student Account Email: stest@gmail.com
-Professor Account Email: ptest@gmail.com
-Password: test1234
+- Student Account Email: stest@gmail.com
+- Professor Account Email: ptest@gmail.com
+- Password: test1234
 
