@@ -13,6 +13,7 @@ class _LoginPageState extends State<LoginPage> {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
   late String _email, _password;
+  bool _obscureText = true;
 
   // set a default role in order to create the buttons below for student/teacher log in
 
@@ -43,6 +44,13 @@ class _LoginPageState extends State<LoginPage> {
     }
   }
 
+  // add password visibility as an option for user
+  void _passVisibility() {
+    setState(() {
+      _obscureText = !_obscureText;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -63,8 +71,16 @@ class _LoginPageState extends State<LoginPage> {
               TextFormField(
                 validator: (input) =>
                     input!.length < 6 ? 'Provide Minimum 6 Characters' : null,
-                decoration: InputDecoration(labelText: 'Password'),
-                obscureText: true,
+                decoration: InputDecoration(labelText: 'Password',
+                  suffixIcon: IconButton(
+                    icon: Icon(
+                      // added visibility here
+                      _obscureText ? Icons.visibility : Icons.visibility_outlined,
+                    ),
+                    onPressed: _passVisibility,
+                  ),
+                ),
+                obscureText: _obscureText,
                 onSaved: (input) => _password = input!,
               ),
               Center(

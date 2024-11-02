@@ -22,6 +22,9 @@ class HomePageState extends State<HomePage> {
     DateTime(2024, 10, 22): [
       {"title": "CEN3101", "time": "11:35-12:25"}
     ],
+    DateTime(2024, 10, 30): [
+      {"title": "CEN3101", "time": "11:35-12:25"}
+    ],
   };
   Map<DateTime, List<String>> _teacherSchedule = {};
 
@@ -83,25 +86,64 @@ class HomePageState extends State<HomePage> {
 
   List<Widget> _buildStudentScheduleForSelectedDay(DateTime selectedDay) {
     final normalizedDay =
-        DateTime(selectedDay.year, selectedDay.month, selectedDay.day);
-    if (_studentSchedule.containsKey(normalizedDay)) {
-      return _studentSchedule[normalizedDay]!.map((event) {
-        return _buildScheduleTile(event["title"]!, event["time"]!);
-      }).toList();
-    } else {
-      return [Center(child: Text("No events for this day"))];
-    }
+    DateTime(selectedDay.year, selectedDay.month, selectedDay.day);
+    return [
+      StreamBuilder(
+        stream: FirebaseFirestore.instance
+            .collection('classes info')
+            .where('date', isEqualTo: normalizedDay)
+            .snapshots(),
+        builder: (context, snapshot) {
+          if (!snapshot.hasData){
+            return Center(child: CircularProgressIndicator());
+          }
+          final events = snapshot.data!.docs;
+          if (events.isEmpty){
+            return Center(child: Text('No events today'));
+          }
+          return Column(
+            children: events.map((doc){
+              final data = doc.data() as Map<String, dynamic>;
+              return _buildScheduleTile(
+                data['title'] ?? 'No Title',
+                data['time'] ?? 'No Time',
+              );
+            }).toList(),
+          );
+        },
+      ),
+    ];
   }
 
   List<Widget> _buildTeacherScheduleForSelectedDay(DateTime selectedDay) {
-    if (_teacherSchedule[selectedDay] != null) {
-      return _teacherSchedule[selectedDay]!.map((event) {
-        return _buildScheduleTile(
-            event, 'xx:xx - yy:yy'); // Placeholder for time
-      }).toList();
-    } else {
-      return [Center(child: Text("No events for this day"))];
-    }
+    final normalizedDay =
+    DateTime(selectedDay.year, selectedDay.month, selectedDay.day);
+    return [
+      StreamBuilder(
+        stream: FirebaseFirestore.instance
+            .collection('classes info')
+            .where('date', isEqualTo: normalizedDay)
+            .snapshots(),
+        builder: (context, snapshot) {
+          if (!snapshot.hasData) {
+            return Center(child: CircularProgressIndicator());
+          }
+          final events = snapshot.data!.docs;
+          if (events.isEmpty) {
+            return Center(child: Text('No events today'));
+          }
+          return Column(
+            children: events.map((doc) {
+              final data = doc.data() as Map<String, dynamic>;
+              return _buildScheduleTile(
+                data['title'] ?? 'No Title',
+                data['time'] ?? 'No Time',
+              );
+            }).toList(),
+          );
+        },
+      ),
+    ];
   }
 
   Widget _buildScheduleTile(String title, String time) {
@@ -122,7 +164,8 @@ class HomePageState extends State<HomePage> {
 
   void _openAddClass(BuildContext context) {
     TextEditingController classController = TextEditingController();
-    TextEditingController timeController = TextEditingController();
+    DateTime? selectedDateTime;
+
     showDialog(
       context: context,
       builder: (context) {
@@ -132,18 +175,29 @@ class HomePageState extends State<HomePage> {
             mainAxisSize: MainAxisSize.min,
             children: [
               TextField(
-                  controller: classController,
-                  decoration: InputDecoration(labelText: 'Class')),
-              TextField(
-                  controller: timeController,
-                  decoration: InputDecoration(labelText: 'Time')),
+                controller: classController,
+                decoration: InputDecoration(labelText: 'Class'),
+              ),
+              SizedBox(height: 16),
+              ElevatedButton(
+                onPressed: () async {
+                  selectedDateTime = await _selectDateTime(context);
+                },
+                child: Text(
+                  selectedDateTime == null
+                      ? 'Select Date & Time'
+                      : 'Selected: ${selectedDateTime!.toString()}',
+                ),
+              ),
             ],
           ),
           actions: [
             TextButton(
               onPressed: () {
-                _saveInfo(classController.text, timeController.text);
-                Navigator.of(context).pop();
+                if (classController.text.isNotEmpty && selectedDateTime != null) {
+                  _saveInfo(classController.text, selectedDateTime!);
+                  Navigator.of(context).pop();
+                }
               },
               child: Text('Save'),
             ),
@@ -153,11 +207,46 @@ class HomePageState extends State<HomePage> {
     );
   }
 
-  void _saveInfo(String title, String time) {
+  Future<DateTime?> _selectDateTime(BuildContext context) async {
+    final DateTime? pickedDate = await showDatePicker(
+      context: context,
+      initialDate: DateTime.now(),
+      firstDate: DateTime(2020),
+      lastDate: DateTime(2030),
+    );
+
+    if (pickedDate != null) {
+      final TimeOfDay? pickedTime = await showTimePicker(
+        context: context,
+        initialTime: TimeOfDay.now(),
+      );
+
+      if (pickedTime != null) {
+        return DateTime(
+          pickedDate.year,
+          pickedDate.month,
+          pickedDate.day,
+          pickedTime.hour,
+          pickedTime.minute,
+        );
+      }
+    }
+    return null;
+  }
+
+  void _saveInfo(String title, DateTime dateTime) {
     FirebaseFirestore.instance.collection('classes info').add({
       'title': title,
-      'time': time,
-      'date': _selectedDay,
+      'time': '${dateTime.hour}:${dateTime.minute.toString().padLeft(2, '0')}',
+      'date': DateTime(dateTime.year, dateTime.month, dateTime.day),
+    }).then((_){
+      setState(() {
+        _studentSchedule[dateTime] ??= []; //initialize somehow
+        _studentSchedule[dateTime]!.add({
+          'title': title,
+          'time': '${dateTime.hour}:${dateTime.minute.toString().padLeft(2, '0')}',
+        });
+      });
     });
   }
 
