@@ -1,3 +1,4 @@
+import 'package:app/ss_framework.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'register_page.dart';
@@ -29,8 +30,8 @@ class _LoginPageState extends State<LoginPage> {
         await UserService().fetchUserData(user.user!.uid);
 
         Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (context) => HomePage()),
+          context, // change back if it does not work
+          MaterialPageRoute(builder: (context) => SsFramework()),
         );
       } catch (e) {
         showDialog(
