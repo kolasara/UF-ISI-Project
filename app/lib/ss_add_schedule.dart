@@ -97,35 +97,45 @@ class Action extends State<ActionPage> {
               SizedBox(height: 16),
               DateSelector(),
               // time
-              SizedBox(height: 16),
               Row(
+                mainAxisAlignment: MainAxisAlignment.center,
                 children: <Widget>[
-                  ElevatedButton(
-                      onPressed: () => _selectStartTime(context),
-                      child: Text("Start Time")
+                  Padding(
+                    padding: const EdgeInsets.only(left: 16, right: 16, top: 16),
+                    child: ElevatedButton(
+                        onPressed: () => _selectStartTime(context),
+                        child: Text("Start Date")
+                    ),
                   ),
-                  SizedBox(height: 16),
-                  ElevatedButton(
-                      onPressed: () => _selectEndTime(context),
-                      child: Text("End Time")
-                  ),
+                  Padding(
+                    padding: const EdgeInsets.only(left: 16, right: 16, top: 16),
+                    child: ElevatedButton(
+                        onPressed: () => _selectEndTime(context),
+                        child: Text("End Date")
+                    ),
+                  )
                 ],
               ),
               // date
               Row(
+                mainAxisAlignment: MainAxisAlignment.center,
                 children: <Widget>[
-                  ElevatedButton(
-                      onPressed: () => _selectStartDate(context),
-                      child: Text("Start Date")
+                  Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: ElevatedButton(
+                        onPressed: () => _selectStartDate(context),
+                        child: Text("Start Date")
+                    ),
                   ),
-                  SizedBox(height: 16),
-                  ElevatedButton(
-                      onPressed: () => _selectEndDate(context),
-                      child: Text("End Date")
-                  ),
+                  Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: ElevatedButton(
+                        onPressed: () => _selectEndDate(context),
+                        child: Text("End Date")
+                    ),
+                  )
                 ],
               ),
-              SizedBox(height: 16),
               ElevatedButton(
                 onPressed: (){
                   Navigator.pop(context);

@@ -4,6 +4,7 @@ import 'package:app/ss_home.dart';
 import 'package:app/ss_profile.dart';
 import 'package:app/ss_search.dart';
 import 'package:app/navigation.dart';
+import 'package:app/ss_classes.dart';
 
 
 class SsFramework extends StatefulWidget {
@@ -19,7 +20,7 @@ class Framework extends State<SsFramework> {
   static final List<StatefulWidget> regions = <StatefulWidget> [
     HomePage(),
     BlankStatefulWidget(),
-    BlankStatefulWidget(),
+    ClassesPage(),
     ProfilePage(),
   ];
 
