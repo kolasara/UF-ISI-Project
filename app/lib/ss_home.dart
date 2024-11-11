@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:table_calendar/table_calendar.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'user_service.dart';
+import 'navigation.dart';
+import 'ss_search.dart';
+import 'ss_add_schedule.dart';
 
 class HomePage extends StatefulWidget {
   @override
@@ -32,6 +35,23 @@ class HomePageState extends State<HomePage> {
     final role = userService.role;
 
     return Scaffold(
+      appBar: buildAppBar(
+        'Calendar',
+        actions: [
+          IconButton(
+            icon: Icon(Icons.search),
+            onPressed: () {
+              showSearch(context: context, delegate: SearchField());
+            },
+          ),
+          IconButton(
+            icon: Icon(Icons.filter_list),
+            onPressed: () {
+              _showFilterWindow(context);
+            },
+          ),
+        ],
+      ),
       body: Column(
         children: [
           TableCalendar(
@@ -61,16 +81,14 @@ class HomePageState extends State<HomePage> {
           ),
         ],
       ),
-      floatingActionButton: FloatingActionButton(
+      floatingActionButton: role == 'Student' ? Container() : FloatingActionButton(
         onPressed: () {
-          if (role == 'Student') {
-            _showFilterWindow(context);
-          } else {
-            _openAddClass(context);
-          }
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => ActionPage())
+          );
         },
-        child: Icon(role == 'Student' ? Icons.filter_list : Icons.add_circle),
-        backgroundColor: Colors.blueGrey,
+        child: Icon(Icons.add),
       ),
     );
   }
@@ -153,77 +171,6 @@ class HomePageState extends State<HomePage> {
     );
   }
 
-  void _openAddClass(BuildContext context) {
-    TextEditingController classController = TextEditingController();
-    DateTime? selectedDateTime;
-
-    showDialog(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: Text('Add Information'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                controller: classController,
-                decoration: InputDecoration(labelText: 'Class'),
-              ),
-              SizedBox(height: 16),
-              ElevatedButton(
-                onPressed: () async {
-                  selectedDateTime = await _selectDateTime(context);
-                },
-                child: Text(
-                  selectedDateTime == null
-                      ? 'Select Date & Time'
-                      : 'Selected: ${selectedDateTime!.toString()}',
-                ),
-              ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () {
-                if (classController.text.isNotEmpty && selectedDateTime != null) {
-                  _saveInfo(classController.text, selectedDateTime!);
-                  Navigator.of(context).pop();
-                }
-              },
-              child: Text('Save'),
-            ),
-          ],
-        );
-      },
-    );
-  }
-
-  Future<DateTime?> _selectDateTime(BuildContext context) async {
-    final DateTime? pickedDate = await showDatePicker(
-      context: context,
-      initialDate: DateTime.now(),
-      firstDate: DateTime(2020),
-      lastDate: DateTime(2030),
-    );
-
-    if (pickedDate != null) {
-      final TimeOfDay? pickedTime = await showTimePicker(
-        context: context,
-        initialTime: TimeOfDay.now(),
-      );
-
-      if (pickedTime != null) {
-        return DateTime(
-          pickedDate.year,
-          pickedDate.month,
-          pickedDate.day,
-          pickedTime.hour,
-          pickedTime.minute,
-        );
-      }
-    }
-    return null;
-  }
 
   void _saveInfo(String title, DateTime dateTime) {
     FirebaseFirestore.instance.collection('classes info').add({

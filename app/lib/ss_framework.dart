@@ -1,8 +1,9 @@
+import 'package:app/ss_add_schedule.dart';
 import 'package:flutter/material.dart';
-import 'search_field.dart';
-import 'navigation.dart';
-import 'ss_home.dart';
-import 'ss_profile.dart';
+import 'package:app/ss_home.dart';
+import 'package:app/ss_profile.dart';
+import 'package:app/ss_search.dart';
+import 'package:app/navigation.dart';
 
 
 class SsFramework extends StatefulWidget {
@@ -33,24 +34,14 @@ class Framework extends State<SsFramework> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-        appBar: buildAppBar(
-          'Calendar',
-          actions: [
-            IconButton(
-              icon: Icon(Icons.search),
-              onPressed: () {
-                showSearch(context: context, delegate: SearchField());
-              },
-            ),
-          ],
-        ),
       body: regions.elementAt(currentIndex),
       bottomNavigationBar: BottomNavigationBar(
         items: [
           BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
           BottomNavigationBarItem(
-              icon: Icon(Icons.notifications), label: 'Notifications'),
-          BottomNavigationBarItem(icon: Icon(Icons.list), label: 'To-Do'),
+              icon: Icon(Icons.notifications), label: 'Notifications'
+          ),
+          BottomNavigationBarItem(icon: Icon(Icons.local_library_rounded), label: 'Classes'),
           BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Profile'),
         ],
         currentIndex: currentIndex,

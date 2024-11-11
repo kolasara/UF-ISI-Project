@@ -27,7 +27,9 @@ class ProfilePageState extends State<ProfilePage> {
     final email = userService.email ?? "No Email";
     final name = userService.name ?? "User's Name";
 
-    return Padding(
+    return Scaffold(
+      appBar: buildAppBar('Profile'),
+      body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Center(
           child: Column(
@@ -61,6 +63,7 @@ class ProfilePageState extends State<ProfilePage> {
             ],
           ),
         ),
+      ),
     );
   }
 }
