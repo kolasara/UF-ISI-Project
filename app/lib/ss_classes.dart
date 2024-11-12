@@ -5,6 +5,7 @@ import 'user_service.dart';
 import 'navigation.dart';
 import 'ss_search.dart';
 import 'ss_add_schedule.dart';
+import 'user_service.dart';
 
 class ClassesPage extends StatefulWidget {
   @override
@@ -53,18 +54,20 @@ class ClassesPageState extends State<ClassesPage> {
         ],
       ),
       body: Column(),
-      floatingActionButton: role == 'Student' ? Container() : FloatingActionButton(
-        onPressed: () {
-          _openAddClass(context);
-        },
-        child: Icon(Icons.add),
-      ),
+      floatingActionButton: role == 'Student'
+          ? Container()
+          : FloatingActionButton(
+              onPressed: () {
+                _openAddClass(context);
+              },
+              child: Icon(Icons.add),
+            ),
     );
   }
 
   List<Widget> _buildStudentScheduleForSelectedDay(DateTime selectedDay) {
     final normalizedDay =
-    DateTime(selectedDay.year, selectedDay.month, selectedDay.day);
+        DateTime(selectedDay.year, selectedDay.month, selectedDay.day);
     return [
       StreamBuilder(
         stream: FirebaseFirestore.instance
@@ -72,15 +75,15 @@ class ClassesPageState extends State<ClassesPage> {
             .where('date', isEqualTo: normalizedDay)
             .snapshots(),
         builder: (context, snapshot) {
-          if (!snapshot.hasData){
+          if (!snapshot.hasData) {
             return Center(child: CircularProgressIndicator());
           }
           final events = snapshot.data!.docs;
-          if (events.isEmpty){
+          if (events.isEmpty) {
             return Center(child: Text('No events today'));
           }
           return Column(
-            children: events.map((doc){
+            children: events.map((doc) {
               final data = doc.data() as Map<String, dynamic>;
               return _buildScheduleTile(
                 data['title'] ?? 'No Title',
@@ -95,7 +98,7 @@ class ClassesPageState extends State<ClassesPage> {
 
   List<Widget> _buildTeacherScheduleForSelectedDay(DateTime selectedDay) {
     final normalizedDay =
-    DateTime(selectedDay.year, selectedDay.month, selectedDay.day);
+        DateTime(selectedDay.year, selectedDay.month, selectedDay.day);
     return [
       StreamBuilder(
         stream: FirebaseFirestore.instance
@@ -141,23 +144,48 @@ class ClassesPageState extends State<ClassesPage> {
   }
 
   void _openAddClass(BuildContext context) {
+    final courseCodeController = TextEditingController();
+    final courseNameController = TextEditingController();
+
     showDialog(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: Text("Add Class"),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                decoration: InputDecoration(labelText: 'Name'),
+        context: context,
+        builder: (context) {
+          return AlertDialog(
+            title: Text("Add Class"),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextField(
+                  controller: courseCodeController,
+                  decoration: InputDecoration(labelText: 'Course Code'),
+                ),
+                SizedBox(height: 16),
+                TextField(
+                  controller: courseNameController,
+                  decoration: InputDecoration(labelText: 'Course Name'),
+                ),
+              ],
+            ),
+            actions: [
+              TextButton(
+                onPressed: () async {
+                  final courseCode = courseCodeController.text.trim();
+                  final courseName = courseNameController.text.trim();
+                  final userEmail = UserService().email;
+
+                  await FirebaseFirestore.instance.collection('classes').add({
+                    'courseCode': courseCode,
+                    'courseName': courseName,
+                    'userEmail': userEmail,
+                  });
+
+                  Navigator.of(context).pop();
+                },
+                child: Text('Submit'),
               ),
-              SizedBox(height: 16),
             ],
-          ),
-        );
-      }
-    );
+          );
+        });
   }
 
   void _saveInfo(String title, DateTime dateTime) {
@@ -165,12 +193,13 @@ class ClassesPageState extends State<ClassesPage> {
       'title': title,
       'time': '${dateTime.hour}:${dateTime.minute.toString().padLeft(2, '0')}',
       'date': DateTime(dateTime.year, dateTime.month, dateTime.day),
-    }).then((_){
+    }).then((_) {
       setState(() {
         _studentSchedule[dateTime] ??= []; //initialize somehow
         _studentSchedule[dateTime]!.add({
           'title': title,
-          'time': '${dateTime.hour}:${dateTime.minute.toString().padLeft(2, '0')}',
+          'time':
+              '${dateTime.hour}:${dateTime.minute.toString().padLeft(2, '0')}',
         });
       });
     });
