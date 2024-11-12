@@ -5,7 +5,7 @@ import 'package:app/ss_profile.dart';
 import 'package:app/ss_search.dart';
 import 'package:app/navigation.dart';
 import 'package:app/ss_classes.dart';
-
+import 'package:app/ss_notifications.dart';
 
 class SsFramework extends StatefulWidget {
   @override
@@ -19,7 +19,7 @@ class Framework extends State<SsFramework> {
   // currentIndex widget page
   static final List<StatefulWidget> regions = <StatefulWidget> [
     HomePage(),
-    BlankStatefulWidget(),
+    NotificationsPage(),
     ClassesPage(),
     ProfilePage(),
   ];
@@ -64,3 +64,7 @@ class _BlankStatefulWidgetState extends State<BlankStatefulWidget> {
     return Container(); // An empty container as the widget content
   }
 }
+
+
+// Make notification tab functional
+
