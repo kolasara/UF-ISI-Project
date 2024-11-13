@@ -18,6 +18,8 @@ class Action extends State<ActionPage> {
 
   TextEditingController nameController = TextEditingController();
 
+  final GlobalKey<_TypeSelect> _typeSelectorKey = GlobalKey<_TypeSelect>();
+
   List<bool> isSelected = List.generate(7, (_) => false);
   List<String> days = ["S", "M", "T", "W", "R", "F", "S"];
 
@@ -150,7 +152,9 @@ class Action extends State<ActionPage> {
                 SizedBox(height: 16),
                 Text('Select Type'),
                 SizedBox(height: 16),
-                TypeSelector(),
+                TypeSelector(
+                  key: _typeSelectorKey,
+                ),
                 SizedBox(height: 16),
                 TextField(
                   controller: nameController,
@@ -216,6 +220,8 @@ class Action extends State<ActionPage> {
       return;
     }
     final selectedDays = _dateSelectorKey.currentState?.selection ?? {};
+    final String? selectedType =
+        _typeSelectorKey.currentState?.selection.first.name;
 
     CollectionReference scheduleCollection = FirebaseFirestore.instance
         .collection('classes')
@@ -234,12 +240,11 @@ class Action extends State<ActionPage> {
 
         // Add a new document to the schedule collection
         await scheduleCollection.add({
-          'type': _TypeSelect().selection,
+          'type': selectedType,
           'name': nameController.text,
           'startTime': startDateTime,
           'endTime': endDateTime,
         });
-        print("Adding a new item!");
       }
       current = current.add(Duration(days: 1));
     }
@@ -251,6 +256,8 @@ enum Type { Class, Disscussion, Office }
 
 // Type selector Widget
 class TypeSelector extends StatefulWidget {
+  const TypeSelector({Key? key}) : super(key: key);
+
   @override
   State<TypeSelector> createState() => _TypeSelect();
 }
