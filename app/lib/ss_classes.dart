@@ -510,6 +510,10 @@ class ClassListView extends StatelessWidget {
               return ListTile(
                 title: Text(courseName),
                 subtitle: Text('Code: $courseCode'),
+                trailing: IconButton(
+                  icon: Icon(Icons.delete, color: Colors.red),
+                  onPressed: () => _deleteClass(context, classId),
+                ),
                 onTap: () {
                   // Navigate to class details or perform another action
                 },
@@ -519,5 +523,24 @@ class ClassListView extends StatelessWidget {
         );
       },
     );
+  }
+
+  // Method to delete a class
+  void _deleteClass(BuildContext context, String classId) async {
+    try {
+      await FirebaseFirestore.instance
+          .collection('classes')
+          .doc(classId)
+          .delete();
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Class deleted successfully.')),
+      );
+    } catch (e) {
+      print('Error deleting class: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to delete the class.')),
+      );
+    }
   }
 }
