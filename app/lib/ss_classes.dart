@@ -6,6 +6,7 @@ import 'navigation.dart';
 import 'ss_search.dart';
 import 'ss_add_schedule.dart';
 import 'user_service.dart';
+import 'class_search.dart';
 
 class ClassesPage extends StatefulWidget {
   @override
@@ -34,6 +35,9 @@ class ClassesPageState extends State<ClassesPage> {
     //Get user data
     final userService = UserService();
     final role = userService.role;
+    final email = userService.email;
+
+    final classSearch = ClassSearch();
 
     return Scaffold(
       appBar: buildAppBar(
@@ -53,7 +57,24 @@ class ClassesPageState extends State<ClassesPage> {
           ),
         ],
       ),
-      body: Column(),
+      body: role == 'Teacher'
+          ? FutureBuilder<List<String>>(
+              future: classSearch.getClassDocumentIdsByEmail(email),
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return Center(child: CircularProgressIndicator());
+                } else if (snapshot.hasError) {
+                  return Center(child: Text('Error fetching classes'));
+                } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                  return Center(child: Text('No classes found.'));
+                }
+
+                final classIds = snapshot.data!;
+
+                return ClassListView(classIds: classIds);
+              },
+            )
+          : Center(child: Text('No classes available for Students.')),
       floatingActionButton: role == 'Student'
           ? Container()
           : FloatingActionButton(
@@ -232,6 +253,56 @@ class ClassesPageState extends State<ClassesPage> {
               onPressed: () => Navigator.of(context).pop(),
             ),
           ],
+        );
+      },
+    );
+  }
+}
+
+class ClassListView extends StatelessWidget {
+  final List<String> classIds;
+
+  ClassListView({required this.classIds});
+
+  @override
+  Widget build(BuildContext context) {
+    return ListView.builder(
+      itemCount: classIds.length,
+      itemBuilder: (context, index) {
+        final classId = classIds[index];
+
+        return FutureBuilder<DocumentSnapshot>(
+          future: FirebaseFirestore.instance
+              .collection('classes')
+              .doc(classId)
+              .get(),
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return ListTile(
+                title: Text('Loading...'),
+              );
+            } else if (snapshot.hasError) {
+              return ListTile(
+                title: Text('Error loading class'),
+              );
+            } else if (!snapshot.hasData || !snapshot.data!.exists) {
+              return ListTile(
+                title: Text('Class not found'),
+              );
+            } else {
+              final data = snapshot.data!.data() as Map<String, dynamic>;
+              final courseCode = data['courseCode'] ?? 'Unknown Code';
+              final courseName = data['courseName'] ?? 'Unknown Name';
+
+              return ListTile(
+                title: Text(courseName),
+                subtitle: Text('Code: $courseCode'),
+                onTap: () {
+                  // Navigate to class details or perform another action
+                },
+              );
+            }
+          },
         );
       },
     );

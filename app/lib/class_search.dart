@@ -8,7 +8,7 @@ class ClassSearch {
     Takes an email. Returns a list of Document IDS for classes
     that are created with the specified email
   */
-  Future<List<String>> getClassDocumentIdsByEmail(String email) async {
+  Future<List<String>> getClassDocumentIdsByEmail(String? email) async {
     List<String> documentIds = [];
 
     try {
