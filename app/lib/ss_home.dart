@@ -5,6 +5,8 @@ import 'user_service.dart';
 import 'navigation.dart';
 import 'ss_search.dart';
 import 'ss_add_schedule.dart';
+import 'package:intl/intl.dart';
+
 
 class HomePage extends StatefulWidget {
   @override
@@ -100,13 +102,13 @@ class HomePageState extends State<HomePage> {
       StreamBuilder(
         stream: FirebaseFirestore.instance
             .collection('classes info')
-            .where('date', isEqualTo: normalizedDay)
+            .where('date', isEqualTo: Timestamp.fromDate(normalizedDay))
             .snapshots(),
         builder: (context, snapshot) {
           if (!snapshot.hasData){
             return Center(child: CircularProgressIndicator());
           }
-          final events = snapshot.data!.docs;
+          final events = (snapshot.data! as QuerySnapshot).docs;
           if (events.isEmpty){
             return Center(child: Text('No events today'));
           }
@@ -125,35 +127,88 @@ class HomePageState extends State<HomePage> {
   }
 
   List<Widget> _buildTeacherScheduleForSelectedDay(DateTime selectedDay) {
-    final normalizedDay =
-    DateTime(selectedDay.year, selectedDay.month, selectedDay.day);
+    final normalizedDay = DateTime(selectedDay.year, selectedDay.month, selectedDay.day);
+
     return [
       StreamBuilder(
         stream: FirebaseFirestore.instance
-            .collection('classes info')
-            .where('date', isEqualTo: normalizedDay)
+            .collection('classes')
+            .doc('euKvpKCE5ct6dHkAwSvm') // MIGHT WANT TO RENAME THIS TO BE EASIER TO CODE LATER!!!
+            .collection('schedule')
+            .where('startTime',
+            isLessThanOrEqualTo: Timestamp.fromDate(
+                selectedDay.add(Duration(hours: 23, minutes: 59))))
             .snapshots(),
         builder: (context, snapshot) {
           if (!snapshot.hasData) {
             return Center(child: CircularProgressIndicator());
           }
-          final events = snapshot.data!.docs;
+
+          final events = snapshot.data!.docs.where((doc) {
+            final data = doc.data() as Map<String, dynamic>;
+            final startTime = (data['startTime'] as Timestamp).toDate();
+            return isSameDay(startTime, selectedDay);
+          }).toList();
+
           if (events.isEmpty) {
             return Center(child: Text('No events today'));
           }
+
           return Column(
             children: events.map((doc) {
               final data = doc.data() as Map<String, dynamic>;
-              return _buildScheduleTile(
-                data['title'] ?? 'No Title',
-                data['time'] ?? 'No Time',
-              );
+              final startTime = (data['startTime'] as Timestamp).toDate();
+              final endTime = (data['endTime'] as Timestamp).toDate();
+              final name = data['name'] ?? 'No Title';
+              final type = data['type'] ?? 'No Type';
+
+              return _buildDetailedScheduleTile(name, startTime, endTime, type);
             }).toList(),
           );
         },
       ),
     ];
   }
+
+
+  Widget _buildDetailedScheduleTile(
+      String name, DateTime startTime, DateTime endTime, String type) {
+    // Format the start and end times to display only hour and minute
+    String startFormatted = DateFormat('HH:mm').format(startTime);
+    String endFormatted = DateFormat('HH:mm').format(endTime);
+
+    return Container(
+      padding: EdgeInsets.all(16),
+      margin: EdgeInsets.symmetric(vertical: 4, horizontal: 16),
+      color: Colors.grey.shade200, // Light gray color
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(name,
+              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+          SizedBox(height: 8),
+          Text(
+            '$type',
+            style: TextStyle(fontSize: 16, fontStyle: FontStyle.italic),
+          ),
+          SizedBox(height: 8),
+          Text(
+            'Start Time: $startFormatted',
+            style: TextStyle(fontSize: 16),
+          ),
+          SizedBox(height: 8),
+          Text(
+            'End Time: $endFormatted',
+            style: TextStyle(fontSize: 16),
+          ),
+        ],
+      ),
+    );
+  }
+
+
+
+
 
   Widget _buildScheduleTile(String title, String time) {
     return Container(
@@ -173,7 +228,7 @@ class HomePageState extends State<HomePage> {
 
 
   void _saveInfo(String title, DateTime dateTime) {
-    FirebaseFirestore.instance.collection('classes info').add({
+    FirebaseFirestore.instance.collection('classes').add({
       'title': title,
       'time': '${dateTime.hour}:${dateTime.minute.toString().padLeft(2, '0')}',
       'date': DateTime(dateTime.year, dateTime.month, dateTime.day),
