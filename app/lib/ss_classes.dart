@@ -5,7 +5,6 @@ import 'user_service.dart';
 import 'navigation.dart';
 import 'ss_search.dart';
 import 'ss_add_schedule.dart';
-import 'user_service.dart';
 import 'class_search.dart';
 
 class ClassesPage extends StatefulWidget {
@@ -16,26 +15,18 @@ class ClassesPage extends StatefulWidget {
 class ClassesPageState extends State<ClassesPage> {
   DateTime _selectedDay = DateTime.now();
   int bottomNavSelection = 0;
-  // Dummy schedules for demonstration; in a real scenario, fetch from Firestore
-  Map<DateTime, List<Map<String, String>>> _studentSchedule = {
-    DateTime(2024, 10, 26): [
-      {"title": "COP4600", "time": "9:35-10:25"}
-    ],
-    DateTime(2024, 10, 22): [
-      {"title": "CEN3101", "time": "11:35-12:25"}
-    ],
-    DateTime(2024, 10, 30): [
-      {"title": "CEN3101", "time": "11:35-12:25"}
-    ],
-  };
-  Map<DateTime, List<String>> _teacherSchedule = {};
+
+  // Filters for class search
+  String? courseCodeFilter;
+  String? courseNameFilter;
+  String? userEmailFilter;
 
   @override
   Widget build(BuildContext context) {
-    //Get user data
+    // Get user data
     final userService = UserService();
     final role = userService.role;
-    final email = userService.email;
+    final String? email = userService.email;
 
     final classSearch = ClassSearch();
 
@@ -44,14 +35,9 @@ class ClassesPageState extends State<ClassesPage> {
         'Classes',
         actions: [
           IconButton(
-            icon: Icon(Icons.search),
-            onPressed: () {
-              showSearch(context: context, delegate: SearchField());
-            },
-          ),
-          IconButton(
             icon: Icon(Icons.filter_list),
             onPressed: () {
+              // Show filter window when filter icon is pressed
               _showFilterWindow(context);
             },
           ),
@@ -59,7 +45,7 @@ class ClassesPageState extends State<ClassesPage> {
       ),
       body: role == 'Teacher'
           ? FutureBuilder<List<String>>(
-              future: classSearch.getClassDocumentIdsByEmail(email),
+              future: classSearch.getClassDocumentIdsByEmail(email!),
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
                   return Center(child: CircularProgressIndicator());
@@ -74,7 +60,8 @@ class ClassesPageState extends State<ClassesPage> {
                 return ClassListView(classIds: classIds);
               },
             )
-          : Center(child: Text('No classes available for Students.')),
+          // Student view: display signed-up classes and class search
+          : _buildStudentView(email),
       floatingActionButton: role == 'Student'
           ? Container()
           : FloatingActionButton(
@@ -86,84 +73,358 @@ class ClassesPageState extends State<ClassesPage> {
     );
   }
 
-  List<Widget> _buildStudentScheduleForSelectedDay(DateTime selectedDay) {
-    final normalizedDay =
-        DateTime(selectedDay.year, selectedDay.month, selectedDay.day);
-    return [
-      StreamBuilder(
-        stream: FirebaseFirestore.instance
-            .collection('classes info')
-            .where('date', isEqualTo: normalizedDay)
-            .snapshots(),
-        builder: (context, snapshot) {
-          if (!snapshot.hasData) {
-            return Center(child: CircularProgressIndicator());
-          }
-          final events = snapshot.data!.docs;
-          if (events.isEmpty) {
-            return Center(child: Text('No events today'));
-          }
-          return Column(
-            children: events.map((doc) {
-              final data = doc.data() as Map<String, dynamic>;
-              return _buildScheduleTile(
-                data['title'] ?? 'No Title',
-                data['time'] ?? 'No Time',
-              );
-            }).toList(),
-          );
-        },
-      ),
-    ];
-  }
-
-  List<Widget> _buildTeacherScheduleForSelectedDay(DateTime selectedDay) {
-    final normalizedDay =
-        DateTime(selectedDay.year, selectedDay.month, selectedDay.day);
-    return [
-      StreamBuilder(
-        stream: FirebaseFirestore.instance
-            .collection('classes info')
-            .where('date', isEqualTo: normalizedDay)
-            .snapshots(),
-        builder: (context, snapshot) {
-          if (!snapshot.hasData) {
-            return Center(child: CircularProgressIndicator());
-          }
-          final events = snapshot.data!.docs;
-          if (events.isEmpty) {
-            return Center(child: Text('No events today'));
-          }
-          return Column(
-            children: events.map((doc) {
-              final data = doc.data() as Map<String, dynamic>;
-              return _buildScheduleTile(
-                data['title'] ?? 'No Title',
-                data['time'] ?? 'No Time',
-              );
-            }).toList(),
-          );
-        },
-      ),
-    ];
-  }
-
-  Widget _buildScheduleTile(String title, String time) {
-    return Container(
-      padding: EdgeInsets.all(16),
-      margin: EdgeInsets.symmetric(vertical: 4, horizontal: 16),
-      color: Colors.pink.shade200,
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(title,
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
-          Text(time, style: TextStyle(fontSize: 16)),
-        ],
-      ),
+  Widget _buildStudentView(String? email) {
+    return Column(
+      children: [
+        // Display signed-up classes
+        Expanded(
+          flex: 1,
+          child: _buildSignedUpClasses(email),
+        ),
+        Divider(),
+        // Display class search and sign-up
+        Expanded(
+          flex: 2,
+          child: _buildStudentClassSearch(),
+        ),
+      ],
     );
   }
 
+  // Method to build the signed-up classes section
+  Widget _buildSignedUpClasses(String? email) {
+    if (email == null) {
+      return Center(child: Text('User email not found.'));
+    }
+
+    return StreamBuilder<QuerySnapshot>(
+      stream: FirebaseFirestore.instance.collection('classes').snapshots(),
+      builder: (context, snapshot) {
+        if (!snapshot.hasData) {
+          return Center(child: CircularProgressIndicator());
+        }
+
+        final classDocs = snapshot.data!.docs;
+
+        return FutureBuilder<List<Map<String, dynamic>>>(
+          future: _getEnrolledClasses(classDocs, email),
+          builder: (context, enrolledSnapshot) {
+            if (!enrolledSnapshot.hasData) {
+              return Center(child: CircularProgressIndicator());
+            }
+
+            final enrolledClasses = enrolledSnapshot.data!;
+
+            if (enrolledClasses.isEmpty) {
+              return Center(
+                  child: Text('You have not signed up for any classes.'));
+            }
+
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Padding(
+                  padding: EdgeInsets.all(8.0),
+                  child: Text(
+                    'Your Classes',
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  ),
+                ),
+                Expanded(
+                  child: ListView(
+                    children: enrolledClasses.map((classInfo) {
+                      final classData =
+                          classInfo['classData'] as Map<String, dynamic>;
+                      final classId = classInfo['classId'];
+                      final courseCode =
+                          classData['courseCode'] ?? 'Unknown Code';
+                      final courseName =
+                          classData['courseName'] ?? 'Unknown Name';
+                      final userEmail =
+                          classData['userEmail'] ?? 'Unknown Email';
+
+                      return ListTile(
+                        title: Text('$courseCode - $courseName'),
+                        subtitle: Text('By $userEmail'),
+                        trailing: ElevatedButton(
+                          child: Text('Leave Class'),
+                          style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.white),
+                          onPressed: () => _unSignUpFromClass(classId),
+                        ),
+                      );
+                    }).toList(),
+                  ),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+
+  // Helper method to get enrolled classes
+  Future<List<Map<String, dynamic>>> _getEnrolledClasses(
+      List<QueryDocumentSnapshot> classDocs, String email) async {
+    final enrolledClasses = <Map<String, dynamic>>[];
+
+    for (var doc in classDocs) {
+      final classData = doc.data() as Map<String, dynamic>;
+      final classId = doc.id;
+
+      try {
+        // Check if the student is in the 'students' subcollection
+        final studentDocRef = FirebaseFirestore.instance
+            .collection('classes')
+            .doc(classId)
+            .collection('students')
+            .doc(email);
+
+        final docSnapshot = await studentDocRef.get();
+        if (docSnapshot.exists) {
+          enrolledClasses.add({
+            'classId': classId,
+            'classData': classData,
+          });
+        }
+      } catch (e) {
+        print('Error checking enrollment for class $classId: $e');
+      }
+    }
+
+    return enrolledClasses;
+  }
+
+  // Method to build the class search and sign-up interface
+  Widget _buildStudentClassSearch() {
+    return Column(
+      children: [
+        Padding(
+          padding: EdgeInsets.all(8.0),
+          child: Text(
+            'Search and Sign Up for Classes',
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+          ),
+        ),
+        Expanded(
+          child: _buildClassList(),
+        ),
+      ],
+    );
+  }
+
+  // Method to build the class list based on filters
+  Widget _buildClassList() {
+    Query classesQuery = FirebaseFirestore.instance.collection('classes');
+
+    // Since Firestore doesn't support full text search, fetch all and filter locally
+    return FutureBuilder<QuerySnapshot>(
+      future: classesQuery.get(),
+      builder: (context, snapshot) {
+        if (!snapshot.hasData) {
+          return Center(child: CircularProgressIndicator());
+        }
+
+        List<QueryDocumentSnapshot> classes = snapshot.data!.docs;
+
+        // Apply local filtering for partial matches
+        classes = classes.where((doc) {
+          final data = doc.data() as Map<String, dynamic>;
+          final courseCode = data['courseCode']?.toString().toLowerCase() ?? '';
+          final courseName = data['courseName']?.toString().toLowerCase() ?? '';
+          final userEmail = data['userEmail']?.toString().toLowerCase() ?? '';
+
+          final courseCodeMatch = courseCodeFilter == null ||
+              courseCode.contains(courseCodeFilter!.toLowerCase());
+          final courseNameMatch = courseNameFilter == null ||
+              courseName.contains(courseNameFilter!.toLowerCase());
+          final userEmailMatch = userEmailFilter == null ||
+              userEmail.contains(userEmailFilter!.toLowerCase());
+
+          return courseCodeMatch && courseNameMatch && userEmailMatch;
+        }).toList();
+
+        if (classes.isEmpty) {
+          return Center(child: Text('No classes found.'));
+        }
+
+        return ListView(
+          children: classes.map((doc) {
+            final data = doc.data() as Map<String, dynamic>;
+            final classId = doc.id;
+            final courseCode = data['courseCode'] ?? 'Unknown Code';
+            final courseName = data['courseName'] ?? 'Unknown Name';
+            final userEmail = data['userEmail'] ?? 'Unknown Email';
+
+            return ListTile(
+              title: Text('$courseCode - $courseName'),
+              subtitle: Text('By $userEmail'),
+              trailing: ElevatedButton(
+                child: Text('Sign Up'),
+                onPressed: () => _signUpForClass(classId),
+              ),
+            );
+          }).toList(),
+        );
+      },
+    );
+  }
+
+  // Method to handle student sign-up for a class
+  void _signUpForClass(String classId) async {
+    final userService = UserService();
+    final String? email = userService.email;
+
+    if (email == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('User email not found. Please log in again.')),
+      );
+      return;
+    }
+
+    final studentData = {
+      'email': email,
+      'isTA': false,
+    };
+
+    try {
+      final studentDocRef = FirebaseFirestore.instance
+          .collection('classes')
+          .doc(classId)
+          .collection('students')
+          .doc(email);
+
+      // Check if the student is already signed up
+      final docSnapshot = await studentDocRef.get();
+      if (docSnapshot.exists) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('You are already signed up for this class.')),
+        );
+        return;
+      }
+
+      // Add the student's information to the 'students' subcollection
+      await studentDocRef.set(studentData);
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Successfully signed up for the class!')),
+      );
+
+      // Refresh the view to show the new class in the signed-up section
+      setState(() {});
+    } catch (e) {
+      print('Error signing up for class: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to sign up for the class.')),
+      );
+    }
+  }
+
+  // *** New Method to handle student un-sign-up from a class ***
+  void _unSignUpFromClass(String classId) async {
+    final userService = UserService();
+    final String? email = userService.email;
+
+    if (email == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('User email not found. Please log in again.')),
+      );
+      return;
+    }
+
+    try {
+      final studentDocRef = FirebaseFirestore.instance
+          .collection('classes')
+          .doc(classId)
+          .collection('students')
+          .doc(email);
+
+      // Check if the student is signed up
+      final docSnapshot = await studentDocRef.get();
+      if (!docSnapshot.exists) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('You are not signed up for this class.')),
+        );
+        return;
+      }
+
+      // Remove the student's information from the 'students' subcollection
+      await studentDocRef.delete();
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('You have left the class.')),
+      );
+
+      // Refresh the view to remove the class from the signed-up section
+      setState(() {});
+    } catch (e) {
+      print('Error leaving the class: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to leave the class.')),
+      );
+    }
+  }
+
+  // Method to show the filter window
+  void _showFilterWindow(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: Text("Filter Classes"),
+          content: SingleChildScrollView(
+            child: Column(
+              children: [
+                TextField(
+                  decoration: InputDecoration(labelText: 'Course Code'),
+                  onChanged: (value) {
+                    courseCodeFilter = value.trim();
+                  },
+                ),
+                TextField(
+                  decoration: InputDecoration(labelText: 'Course Name'),
+                  onChanged: (value) {
+                    courseNameFilter = value.trim();
+                  },
+                ),
+                TextField(
+                  decoration: InputDecoration(labelText: "Professor's Email"),
+                  onChanged: (value) {
+                    userEmailFilter = value.trim();
+                  },
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                // Apply filters and refresh the class list
+                setState(() {});
+                Navigator.of(context).pop();
+              },
+              child: Text('Apply'),
+            ),
+            TextButton(
+              onPressed: () {
+                // Reset filters and refresh the class list
+                setState(() {
+                  courseCodeFilter = null;
+                  courseNameFilter = null;
+                  userEmailFilter = null;
+                });
+                Navigator.of(context).pop();
+              },
+              child: Text('Reset'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  // Existing method to open add class dialog for teachers
   void _openAddClass(BuildContext context) {
     final courseCodeController = TextEditingController();
     final courseNameController = TextEditingController();
@@ -208,57 +469,9 @@ class ClassesPageState extends State<ClassesPage> {
           );
         });
   }
-
-  void _saveInfo(String title, DateTime dateTime) {
-    FirebaseFirestore.instance.collection('classes info').add({
-      'title': title,
-      'time': '${dateTime.hour}:${dateTime.minute.toString().padLeft(2, '0')}',
-      'date': DateTime(dateTime.year, dateTime.month, dateTime.day),
-    }).then((_) {
-      setState(() {
-        _studentSchedule[dateTime] ??= []; //initialize somehow
-        _studentSchedule[dateTime]!.add({
-          'title': title,
-          'time':
-              '${dateTime.hour}:${dateTime.minute.toString().padLeft(2, '0')}',
-        });
-      });
-    });
-  }
-
-  // Dummy Filter method for Student
-  void _showFilterWindow(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: Text('Filtering'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              CheckboxListTile(
-                title: Text('Class #1'),
-                value: false,
-                onChanged: (bool? value) {},
-              ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              child: Text('Apply'),
-              onPressed: () => Navigator.of(context).pop(),
-            ),
-            TextButton(
-              child: Text('Cancel'),
-              onPressed: () => Navigator.of(context).pop(),
-            ),
-          ],
-        );
-      },
-    );
-  }
 }
 
+// Existing ClassListView for teachers
 class ClassListView extends StatelessWidget {
   final List<String> classIds;
 
