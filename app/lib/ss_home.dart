@@ -96,35 +96,120 @@ class HomePageState extends State<HomePage> {
   }
 
   List<Widget> _buildStudentScheduleForSelectedDay(DateTime selectedDay) {
-    final normalizedDay =
-    DateTime(selectedDay.year, selectedDay.month, selectedDay.day);
+    final normalizedDay = DateTime(selectedDay.year, selectedDay.month, selectedDay.day);
+    final userService = UserService();
+    final String? email = userService.email;
+    if (email == null) {
+      return [
+        Center(child: Text('User email not found. Please log in again.')),
+      ];
+    }
+
     return [
-      StreamBuilder(
-        stream: FirebaseFirestore.instance
-            .collection('classes info')
-            .where('date', isEqualTo: Timestamp.fromDate(normalizedDay))
-            .snapshots(),
-        builder: (context, snapshot) {
-          if (!snapshot.hasData){
+      FutureBuilder(
+        future: _isUserSignedUpOrTeacherCreatedClass('euKvpKCE5ct6dHkAwSvm', email),
+        builder: (context, AsyncSnapshot<bool> snapshot1) {
+          if (!snapshot1.hasData) {
             return Center(child: CircularProgressIndicator());
           }
-          final events = (snapshot.data! as QuerySnapshot).docs;
-          if (events.isEmpty){
-            return Center(child: Text('No events today'));
-          }
-          return Column(
-            children: events.map((doc){
-              final data = doc.data() as Map<String, dynamic>;
-              return _buildScheduleTile(
-                data['title'] ?? 'No Title',
-                data['time'] ?? 'No Time',
+          final isSignedUpForClass1 = snapshot1.data!;
+
+          return FutureBuilder(
+            future: _isUserSignedUpOrTeacherCreatedClass('lkcZRTgbT82iNYfGkwMg', email),
+            builder: (context, AsyncSnapshot<bool> snapshot2) {
+              if (!snapshot2.hasData) {
+                return Center(child: CircularProgressIndicator());
+              }
+              final isSignedUpForClass2 = snapshot2.data!;
+
+              if (!isSignedUpForClass1 && !isSignedUpForClass2) {
+                return Center(child: Text('No classes scheduled'));
+              }
+
+              final eventsClass1 = isSignedUpForClass1
+                  ? FirebaseFirestore.instance
+                  .collection('classes')
+                  .doc('euKvpKCE5ct6dHkAwSvm')
+                  .collection('schedule')
+                  .where('startTime', isLessThanOrEqualTo: Timestamp.fromDate(selectedDay.add(Duration(hours: 23, minutes: 59))))
+                  .snapshots()
+                  : null;
+
+              final eventsClass2 = isSignedUpForClass2
+                  ? FirebaseFirestore.instance
+                  .collection('classes')
+                  .doc('lkcZRTgbT82iNYfGkwMg')
+                  .collection('schedule')
+                  .where('startTime', isLessThanOrEqualTo: Timestamp.fromDate(selectedDay.add(Duration(hours: 23, minutes: 59))))
+                  .snapshots()
+                  : null;
+
+
+
+              return Column(
+                children: [
+                  if (eventsClass1 != null)
+                    StreamBuilder(
+                      stream: eventsClass1,
+                      builder: (context, snapshot) {
+                        if (!snapshot.hasData) {
+                          return Center(child: CircularProgressIndicator());
+                        }
+                        final events1 = snapshot.data!.docs.where((doc) {
+                          final data = doc.data() as Map<String, dynamic>;
+                          final startTime = (data['startTime'] as Timestamp).toDate();
+                          return isSameDay(startTime, selectedDay);
+                        }).toList();
+
+                        return Column(
+                          children: events1.map((doc) {
+                            final data = doc.data() as Map<String, dynamic>;
+                            final startTime = (data['startTime'] as Timestamp).toDate();
+                            final endTime = (data['endTime'] as Timestamp).toDate();
+                            final name = data['name'] ?? 'No Title';
+                            final type = data['type'] ?? 'No Type';
+                            return _buildDetailedScheduleTile(name, startTime, endTime, type);
+                          }).toList(),
+                        );
+                      },
+                    ),
+                  if (eventsClass2 != null)
+                    StreamBuilder(
+                      stream: eventsClass2,
+                      builder: (context, snapshot) {
+                        if (!snapshot.hasData) {
+                          return Center(child: CircularProgressIndicator());
+                        }
+                        final events2 = snapshot.data!.docs.where((doc) {
+                          final data = doc.data() as Map<String, dynamic>;
+                          final startTime = (data['startTime'] as Timestamp).toDate();
+                          return isSameDay(startTime, selectedDay);
+                        }).toList();
+
+
+                        return Column(
+                          children: events2.map((doc) {
+                            final data = doc.data() as Map<String, dynamic>;
+                            final startTime = (data['startTime'] as Timestamp).toDate();
+                            final endTime = (data['endTime'] as Timestamp).toDate();
+                            final name = data['name'] ?? 'No Title';
+                            final type = data['type'] ?? 'No Type';
+                            return _buildDetailedScheduleTile(name, startTime, endTime, type);
+                          }).toList(),
+                        );
+                      },
+                    ),
+
+                ],
               );
-            }).toList(),
+            },
           );
         },
       ),
     ];
   }
+
+
 
   List<Widget> _buildTeacherScheduleForSelectedDay(DateTime selectedDay) {
     final normalizedDay = DateTime(selectedDay.year, selectedDay.month, selectedDay.day);
@@ -133,41 +218,105 @@ class HomePageState extends State<HomePage> {
       StreamBuilder(
         stream: FirebaseFirestore.instance
             .collection('classes')
-            .doc('euKvpKCE5ct6dHkAwSvm') // MIGHT WANT TO RENAME THIS TO BE EASIER TO CODE LATER!!!
+            .doc('lkcZRTgbT82iNYfGkwMg')
             .collection('schedule')
             .where('startTime',
+            isGreaterThanOrEqualTo: Timestamp.fromDate(
+                DateTime(selectedDay.year, selectedDay.month, selectedDay.day)))
+            .where('startTime',
             isLessThanOrEqualTo: Timestamp.fromDate(
-                selectedDay.add(Duration(hours: 23, minutes: 59))))
+                DateTime(selectedDay.year, selectedDay.month, selectedDay.day)
+                    .add(Duration(hours: 23, minutes: 59))))
             .snapshots(),
         builder: (context, snapshot) {
           if (!snapshot.hasData) {
             return Center(child: CircularProgressIndicator());
           }
 
-          final events = snapshot.data!.docs.where((doc) {
+          final eventsClass1 = snapshot.data!.docs.where((doc) {
             final data = doc.data() as Map<String, dynamic>;
             final startTime = (data['startTime'] as Timestamp).toDate();
             return isSameDay(startTime, selectedDay);
           }).toList();
 
-          if (events.isEmpty) {
-            return Center(child: Text('No events today'));
-          }
+          return StreamBuilder(
+            stream: FirebaseFirestore.instance
+                .collection('classes')
+                .doc('euKvpKCE5ct6dHkAwSvm')
+                .collection('schedule')
+                .where('startTime',
+                isGreaterThanOrEqualTo: Timestamp.fromDate(
+                    DateTime(selectedDay.year, selectedDay.month, selectedDay.day)))
+                .where('startTime',
+                isLessThanOrEqualTo: Timestamp.fromDate(
+                    DateTime(selectedDay.year, selectedDay.month, selectedDay.day)
+                        .add(Duration(hours: 23, minutes: 59))))
+                .snapshots(),
+            builder: (context, snapshot) {
+              if (!snapshot.hasData) {
+                return Center(child: CircularProgressIndicator());
+              }
 
-          return Column(
-            children: events.map((doc) {
-              final data = doc.data() as Map<String, dynamic>;
-              final startTime = (data['startTime'] as Timestamp).toDate();
-              final endTime = (data['endTime'] as Timestamp).toDate();
-              final name = data['name'] ?? 'No Title';
-              final type = data['type'] ?? 'No Type';
+              final eventsClass2 = snapshot.data!.docs.where((doc) {
+                final data = doc.data() as Map<String, dynamic>;
+                final startTime = (data['startTime'] as Timestamp).toDate();
+                return isSameDay(startTime, selectedDay);
+              }).toList();
 
-              return _buildDetailedScheduleTile(name, startTime, endTime, type);
-            }).toList(),
+              final allEvents = [...eventsClass1, ...eventsClass2];
+              if (allEvents.isEmpty) {
+                return Center(child: Text('No events today'));
+              }
+
+              return Column(
+                children: allEvents.map((doc) {
+                  final data = doc.data() as Map<String, dynamic>;
+                  final startTime = (data['startTime'] as Timestamp).toDate();
+                  final endTime = (data['endTime'] as Timestamp).toDate();
+                  final name = data['name'] ?? 'No Title';
+                  final type = data['type'] ?? 'No Type';
+
+                  return _buildDetailedScheduleTile(name, startTime, endTime, type);
+                }).toList(),
+              );
+            },
           );
         },
       ),
     ];
+  }
+
+
+
+
+
+
+
+  Future<bool> _isUserSignedUpOrTeacherCreatedClass(String classId, String email) async {
+    try {
+      final studentDocRef = FirebaseFirestore.instance
+          .collection('classes')
+          .doc(classId)
+          .collection('students')
+          .doc(email);
+      final studentDocSnapshot = await studentDocRef.get();
+      if (studentDocSnapshot.exists) {
+        return true;
+      }
+      final teacherDocRef = FirebaseFirestore.instance
+          .collection('classes')
+          .doc(classId)
+          .collection('teachers')
+          .doc(email);
+      final teacherDocSnapshot = await teacherDocRef.get();
+      if (teacherDocSnapshot.exists) {
+        return true;
+      }
+      return false;
+    } catch (e) {
+      print('Error checking class signup or creation: $e');
+      return false;
+    }
   }
 
 
