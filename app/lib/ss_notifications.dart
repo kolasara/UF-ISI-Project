@@ -47,7 +47,7 @@ class _NotificationsPageState extends State<NotificationsPage> {
           Expanded(
             child: StreamBuilder<QuerySnapshot>(
               stream: FirebaseFirestore.instance
-                  .collection('classes info')
+                  .collection('classes')
                   .where('date', isEqualTo: normalizedDay) // or your date format
                   .snapshots(),
               builder: (context, snapshot) {

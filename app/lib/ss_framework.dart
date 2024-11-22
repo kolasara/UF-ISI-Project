@@ -16,6 +16,8 @@ class Framework extends State<SsFramework> {
   // track navigation page
   int currentIndex = 0;
 
+  static final String teacherEmail = '';
+
   // currentIndex widget page
   static final List<StatefulWidget> regions = <StatefulWidget> [
     HomePage(),
