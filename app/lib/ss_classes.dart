@@ -37,7 +37,7 @@ class ClassesPageState extends State<ClassesPage> {
           IconButton(
             icon: Icon(Icons.filter_list),
             onPressed: () {
-              // Show filter window when filter icon is pressed
+              //Show filter window when filter icon is pressed
               _showFilterWindow(context);
             },
           ),
@@ -60,7 +60,7 @@ class ClassesPageState extends State<ClassesPage> {
                 return ClassListView(classIds: classIds);
               },
             )
-          // Student view: display signed-up classes and class search
+          //Student view: display signed-up classes and class search
           : _buildStudentView(email),
       floatingActionButton: role == 'Student'
           ? Container()
@@ -76,13 +76,13 @@ class ClassesPageState extends State<ClassesPage> {
   Widget _buildStudentView(String? email) {
     return Column(
       children: [
-        // Display signed-up classes
+        //Display signed-up classes
         Expanded(
           flex: 1,
           child: _buildSignedUpClasses(email),
         ),
         Divider(),
-        // Display class search and sign-up
+        //Display class search and sign-up
         Expanded(
           flex: 2,
           child: _buildStudentClassSearch(),
@@ -91,17 +91,17 @@ class ClassesPageState extends State<ClassesPage> {
     );
   }
 
-  // Method to build the signed-up classes section
+  //Method to build the signed-up classes section
   Widget _buildSignedUpClasses(String? email) {
     if (email == null) {
       return Center(child: Text('User email not found.'));
     }
 
-    // Initialize the ClassSearch instance
+    //Initialize the ClassSearch instance
     final classSearch = ClassSearch();
 
     return FutureBuilder<List<String>>(
-      // Use the new method to fetch enrolled class IDs
+      //Use the new method to fetch enrolled class IDs
       future: classSearch.getEnrolledClassIds(email),
       builder: (context, enrolledSnapshot) {
         if (!enrolledSnapshot.hasData) {
@@ -115,7 +115,7 @@ class ClassesPageState extends State<ClassesPage> {
         }
 
         return FutureBuilder<QuerySnapshot>(
-          // Fetch details for all enrolled classes
+          //Fetch details for all enrolled classes
           future: FirebaseFirestore.instance.collection('classes').get(),
           builder: (context, classSnapshot) {
             if (!classSnapshot.hasData) {
@@ -169,39 +169,7 @@ class ClassesPageState extends State<ClassesPage> {
     );
   }
 
-  // Helper method to get enrolled classes
-  Future<List<Map<String, dynamic>>> _getEnrolledClasses(
-      List<QueryDocumentSnapshot> classDocs, String email) async {
-    final enrolledClasses = <Map<String, dynamic>>[];
-
-    for (var doc in classDocs) {
-      final classData = doc.data() as Map<String, dynamic>;
-      final classId = doc.id;
-
-      try {
-        // Check if the student is in the 'students' subcollection
-        final studentDocRef = FirebaseFirestore.instance
-            .collection('classes')
-            .doc(classId)
-            .collection('students')
-            .doc(email);
-
-        final docSnapshot = await studentDocRef.get();
-        if (docSnapshot.exists) {
-          enrolledClasses.add({
-            'classId': classId,
-            'classData': classData,
-          });
-        }
-      } catch (e) {
-        print('Error checking enrollment for class $classId: $e');
-      }
-    }
-
-    return enrolledClasses;
-  }
-
-  // Method to build the class search and sign-up interface
+  //Method to build the class search and sign-up interface
   Widget _buildStudentClassSearch() {
     return Column(
       children: [
@@ -219,7 +187,7 @@ class ClassesPageState extends State<ClassesPage> {
     );
   }
 
-  // Method to build the class list based on filters
+  //Method to build the class list based on filters
   Widget _buildClassList() {
     Query classesQuery = FirebaseFirestore.instance.collection('classes');
 
@@ -233,7 +201,7 @@ class ClassesPageState extends State<ClassesPage> {
 
         List<QueryDocumentSnapshot> classes = snapshot.data!.docs;
 
-        // Apply local filtering for partial matches
+        //Apply local filtering for partial matches
         classes = classes.where((doc) {
           final data = doc.data() as Map<String, dynamic>;
           final courseCode = data['courseCode']?.toString().toLowerCase() ?? '';
@@ -276,7 +244,7 @@ class ClassesPageState extends State<ClassesPage> {
     );
   }
 
-  // Method to handle student sign-up for a class
+  //Method to handle student sign-up for a class
   void _signUpForClass(String classId) async {
     final userService = UserService();
     final String? email = userService.email;
@@ -300,7 +268,7 @@ class ClassesPageState extends State<ClassesPage> {
           .collection('students')
           .doc(email);
 
-      // Check if the student is already signed up
+      //Check if the student is already signed up
       final docSnapshot = await studentDocRef.get();
       if (docSnapshot.exists) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -309,14 +277,14 @@ class ClassesPageState extends State<ClassesPage> {
         return;
       }
 
-      // Add the student's information to the 'students' subcollection
+      //Add the students information to the students subcollection
       await studentDocRef.set(studentData);
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Successfully signed up for the class!')),
       );
 
-      // Refresh the view to show the new class in the signed-up section
+      //Refresh the view to show the new class in the signed-up section
       setState(() {});
     } catch (e) {
       print('Error signing up for class: $e');
@@ -326,7 +294,7 @@ class ClassesPageState extends State<ClassesPage> {
     }
   }
 
-  // *** New Method to handle student un-sign-up from a class ***
+  //Method to handle student un-sign-up from a class
   void _unSignUpFromClass(String classId) async {
     final userService = UserService();
     final String? email = userService.email;
@@ -345,7 +313,7 @@ class ClassesPageState extends State<ClassesPage> {
           .collection('students')
           .doc(email);
 
-      // Check if the student is signed up
+      //Check if the student is signed up
       final docSnapshot = await studentDocRef.get();
       if (!docSnapshot.exists) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -354,14 +322,14 @@ class ClassesPageState extends State<ClassesPage> {
         return;
       }
 
-      // Remove the student's information from the 'students' subcollection
+      //Remove the student's information from the students subcollection
       await studentDocRef.delete();
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('You have left the class.')),
       );
 
-      // Refresh the view to remove the class from the signed-up section
+      //Refresh the view to remove the class from the signed-up section
       setState(() {});
     } catch (e) {
       print('Error leaving the class: $e');
@@ -371,7 +339,7 @@ class ClassesPageState extends State<ClassesPage> {
     }
   }
 
-  // Method to show the filter window
+  //Method to show the filter window
   void _showFilterWindow(BuildContext context) {
     showDialog(
       context: context,
@@ -429,7 +397,7 @@ class ClassesPageState extends State<ClassesPage> {
     );
   }
 
-  // Existing method to open add class dialog for teachers
+  //Existing method to open add class dialog for teachers
   void _openAddClass(BuildContext context) {
     final courseCodeController = TextEditingController();
     final courseNameController = TextEditingController();
@@ -476,7 +444,7 @@ class ClassesPageState extends State<ClassesPage> {
   }
 }
 
-// Existing ClassListView for teachers
+//Existing ClassListView for teachers
 class ClassListView extends StatelessWidget {
   final List<String> classIds;
 
@@ -520,7 +488,12 @@ class ClassListView extends StatelessWidget {
                   onPressed: () => _deleteClass(context, classId),
                 ),
                 onTap: () {
-                  // Navigate to class details or perform another action
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => ClassDetailsPage(classId: classId),
+                    ),
+                  );
                 },
               );
             }
@@ -530,7 +503,7 @@ class ClassListView extends StatelessWidget {
     );
   }
 
-  // Method to delete a class
+  //Method to delete a class
   void _deleteClass(BuildContext context, String classId) async {
     try {
       await FirebaseFirestore.instance
@@ -545,6 +518,129 @@ class ClassListView extends StatelessWidget {
       print('Error deleting class: $e');
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Failed to delete the class.')),
+      );
+    }
+  }
+}
+
+class ClassDetailsPage extends StatefulWidget {
+  final String classId;
+
+  ClassDetailsPage({required this.classId});
+
+  @override
+  _ClassDetailsPageState createState() => _ClassDetailsPageState();
+}
+
+class _ClassDetailsPageState extends State<ClassDetailsPage> {
+  late Future<List<Map<String, dynamic>>> studentsFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    studentsFuture = _getStudentsInClass(widget.classId);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('Class Details'),
+      ),
+      body: FutureBuilder<List<Map<String, dynamic>>>(
+        future: studentsFuture,
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return Center(child: CircularProgressIndicator());
+          }
+          if (snapshot.hasError) {
+            return Center(child: Text('Error loading students.'));
+          }
+          final students = snapshot.data!;
+          if (students.isEmpty) {
+            return Center(child: Text('No students enrolled in this class.'));
+          }
+          return ListView(
+            children: students.map((studentData) {
+              final name = studentData['name'] ?? 'Unknown Name';
+              final email = studentData['email'] ?? 'Unknown Email';
+              final isTA = studentData['isTA'] ?? false;
+
+              return ListTile(
+                title: Text(name),
+                subtitle: Text(email),
+                trailing: ElevatedButton(
+                  child: Text(isTA ? 'Remove TA' : 'Assign TA'),
+                  onPressed: () => _toggleTAStatus(widget.classId, email, isTA),
+                ),
+              );
+            }).toList(),
+          );
+        },
+      ),
+    );
+  }
+
+  //Method to fetch students in the class
+  Future<List<Map<String, dynamic>>> _getStudentsInClass(String classId) async {
+    //Fetch students subcollection
+    final studentsCollection = await FirebaseFirestore.instance
+        .collection('classes')
+        .doc(classId)
+        .collection('students')
+        .get();
+
+    final students = <Map<String, dynamic>>[];
+
+    for (var doc in studentsCollection.docs) {
+      final email = doc.id;
+      final isTA = doc.data()['isTA'] ?? false;
+
+      //Get student name from email
+      final name = await ClassSearch().getNameByEmail(email);
+
+      students.add({
+        'email': email,
+        'name': name,
+        'isTA': isTA,
+      });
+    }
+
+    //Sort students as per the requirement
+    students.sort((a, b) {
+      if (a['isTA'] != b['isTA']) {
+        //isTA true comes before false
+        return a['isTA'] ? -1 : 1;
+      } else {
+        //If isTA is same, sort by name
+        return (a['name'] as String).compareTo(b['name'] as String);
+      }
+    });
+
+    return students;
+  }
+
+  //Method to toggle TA status
+  void _toggleTAStatus(String classId, String email, bool currentStatus) async {
+    try {
+      await FirebaseFirestore.instance
+          .collection('classes')
+          .doc(classId)
+          .collection('students')
+          .doc(email)
+          .update({'isTA': !currentStatus});
+
+      //Refresh the students list
+      setState(() {
+        studentsFuture = _getStudentsInClass(classId);
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('TA updated successfully.')),
+      );
+    } catch (e) {
+      print('Error updating TA status: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to update TA status.')),
       );
     }
   }
