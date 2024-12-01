@@ -36,6 +36,7 @@ dependencies:
   table_calendar: ^3.0.7
   intl: ^0.18.0
   rxdart: ^0.27.2
+
   # to display just hour and minute in the schedule, I don't like the seconds part
 
 
