@@ -97,28 +97,35 @@ class ClassesPageState extends State<ClassesPage> {
       return Center(child: Text('User email not found.'));
     }
 
-    return StreamBuilder<QuerySnapshot>(
-      stream: FirebaseFirestore.instance.collection('classes').snapshots(),
-      builder: (context, snapshot) {
-        if (!snapshot.hasData) {
+    // Initialize the ClassSearch instance
+    final classSearch = ClassSearch();
+
+    return FutureBuilder<List<String>>(
+      // Use the new method to fetch enrolled class IDs
+      future: classSearch.getEnrolledClassIds(email),
+      builder: (context, enrolledSnapshot) {
+        if (!enrolledSnapshot.hasData) {
           return Center(child: CircularProgressIndicator());
         }
 
-        final classDocs = snapshot.data!.docs;
+        final enrolledClassIds = enrolledSnapshot.data!;
 
-        return FutureBuilder<List<Map<String, dynamic>>>(
-          future: _getEnrolledClasses(classDocs, email),
-          builder: (context, enrolledSnapshot) {
-            if (!enrolledSnapshot.hasData) {
+        if (enrolledClassIds.isEmpty) {
+          return Center(child: Text('You have not signed up for any classes.'));
+        }
+
+        return FutureBuilder<QuerySnapshot>(
+          // Fetch details for all enrolled classes
+          future: FirebaseFirestore.instance.collection('classes').get(),
+          builder: (context, classSnapshot) {
+            if (!classSnapshot.hasData) {
               return Center(child: CircularProgressIndicator());
             }
 
-            final enrolledClasses = enrolledSnapshot.data!;
-
-            if (enrolledClasses.isEmpty) {
-              return Center(
-                  child: Text('You have not signed up for any classes.'));
-            }
+            final classDocs = classSnapshot.data!.docs;
+            final enrolledClasses = classDocs
+                .where((doc) => enrolledClassIds.contains(doc.id))
+                .toList();
 
             return Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -132,10 +139,8 @@ class ClassesPageState extends State<ClassesPage> {
                 ),
                 Expanded(
                   child: ListView(
-                    children: enrolledClasses.map((classInfo) {
-                      final classData =
-                          classInfo['classData'] as Map<String, dynamic>;
-                      final classId = classInfo['classId'];
+                    children: enrolledClasses.map((doc) {
+                      final classData = doc.data() as Map<String, dynamic>;
                       final courseCode =
                           classData['courseCode'] ?? 'Unknown Code';
                       final courseName =
@@ -150,7 +155,7 @@ class ClassesPageState extends State<ClassesPage> {
                           child: Text('Leave Class'),
                           style: ElevatedButton.styleFrom(
                               backgroundColor: Colors.white),
-                          onPressed: () => _unSignUpFromClass(classId),
+                          onPressed: () => _unSignUpFromClass(doc.id),
                         ),
                       );
                     }).toList(),

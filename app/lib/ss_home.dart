@@ -18,21 +18,6 @@ class HomePage extends StatefulWidget {
 class HomePageState extends State<HomePage> {
   DateTime _selectedDay = DateTime.now();
   int bottomNavSelection = 0;
-  // Dummy schedules for demonstration; in a real scenario, fetch from Firestore
-  Map<DateTime, List<Map<String, String>>> _studentSchedule = {
-    DateTime(2024, 10, 26): [
-      {"title": "COP4600", "time": "9:35-10:25"}
-    ],
-    DateTime(2024, 10, 22): [
-      {"title": "CEN3101", "time": "11:35-12:25"}
-    ],
-    DateTime(2024, 10, 30): [
-      {"title": "CEN3101", "time": "11:35-12:25"}
-    ],
-  };
-  Map<DateTime, List<String>> _teacherSchedule = {};
-
-
 
   @override
   Widget build(BuildContext context) {
@@ -54,9 +39,9 @@ class HomePageState extends State<HomePage> {
             IconButton(
               icon: Icon(Icons.filter_list),
               onPressed: () {
-              _showFilterWindow(context);
-            },
-          ),
+                _showFilterWindow(context);
+              },
+            ),
           if (role == 'Teacher')
             IconButton(
               icon: Icon(Icons.person_add),
@@ -75,10 +60,7 @@ class HomePageState extends State<HomePage> {
             calendarFormat: CalendarFormat.week,
             calendarStyle: CalendarStyle(
                 selectedDecoration: BoxDecoration(
-                  color: Colors.purple,
-                  shape: BoxShape.circle
-                )
-            ),
+                    color: Colors.purple, shape: BoxShape.circle)),
             selectedDayPredicate: (day) => isSameDay(_selectedDay, day),
             onDaySelected: (selectedDay, focusedDay) {
               setState(() {
@@ -95,21 +77,21 @@ class HomePageState extends State<HomePage> {
           ),
         ],
       ),
-      floatingActionButton: role == 'Student' ? Container() : FloatingActionButton(
-        onPressed: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(builder: (context) => ActionPage())
-          );
-        },
-        child: Icon(Icons.add),
-      ),
-
+      floatingActionButton: role == 'Student'
+          ? Container()
+          : FloatingActionButton(
+              onPressed: () {
+                Navigator.push(context,
+                    MaterialPageRoute(builder: (context) => ActionPage()));
+              },
+              child: Icon(Icons.add),
+            ),
     );
   }
 
   List<Widget> _buildStudentScheduleForSelectedDay(DateTime selectedDay) {
-    final normalizedDay = DateTime(selectedDay.year, selectedDay.month, selectedDay.day);
+    final normalizedDay =
+        DateTime(selectedDay.year, selectedDay.month, selectedDay.day);
     final userService = UserService();
     final String? email = userService.email;
     if (email == null) {
@@ -120,7 +102,8 @@ class HomePageState extends State<HomePage> {
 
     return [
       FutureBuilder(
-        future: _isUserSignedUpOrTeacherCreatedClass('euKvpKCE5ct6dHkAwSvm', email),
+        future:
+            _isUserSignedUpOrTeacherCreatedClass('euKvpKCE5ct6dHkAwSvm', email),
         builder: (context, AsyncSnapshot<bool> snapshot1) {
           if (!snapshot1.hasData) {
             return Center(child: CircularProgressIndicator());
@@ -147,50 +130,51 @@ class HomePageState extends State<HomePage> {
 
                   final eventsClass1 = isSignedUpForClass1
                       ? FirebaseFirestore.instance
-                      .collection('classes')
-                      .doc('euKvpKCE5ct6dHkAwSvm')
-                      .collection('schedule')
-                      .where('startTime',
-                      isLessThanOrEqualTo: Timestamp.fromDate(
-                          selectedDay.add(Duration(hours: 23, minutes: 59))))
-                      .snapshots()
+                          .collection('classes')
+                          .doc('euKvpKCE5ct6dHkAwSvm')
+                          .collection('schedule')
+                          .where('startTime',
+                              isLessThanOrEqualTo: Timestamp.fromDate(
+                                  selectedDay
+                                      .add(Duration(hours: 23, minutes: 59))))
+                          .snapshots()
                       : null;
 
                   final eventsClass2 = isSignedUpForClass2
                       ? FirebaseFirestore.instance
-                      .collection('classes')
-                      .doc('lkcZRTgbT82iNYfGkwMg')
-                      .collection('schedule')
-                      .where('startTime',
-                      isLessThanOrEqualTo: Timestamp.fromDate(
-                          selectedDay.add(Duration(hours: 23, minutes: 59))))
-                      .snapshots()
+                          .collection('classes')
+                          .doc('lkcZRTgbT82iNYfGkwMg')
+                          .collection('schedule')
+                          .where('startTime',
+                              isLessThanOrEqualTo: Timestamp.fromDate(
+                                  selectedDay
+                                      .add(Duration(hours: 23, minutes: 59))))
+                          .snapshots()
                       : null;
 
                   final eventsClass3 = isSignedUpForClass3
                       ? FirebaseFirestore.instance
-                      .collection('classes')
-                      .doc('jJTbO8wTb46B27zk8935')
-                      .collection('schedule')
-                      .where('startTime',
-                      isLessThanOrEqualTo: Timestamp.fromDate(
-                          selectedDay.add(Duration(hours: 23, minutes: 59))))
-                      .snapshots()
-                       :null;
+                          .collection('classes')
+                          .doc('jJTbO8wTb46B27zk8935')
+                          .collection('schedule')
+                          .where('startTime',
+                              isLessThanOrEqualTo: Timestamp.fromDate(
+                                  selectedDay
+                                      .add(Duration(hours: 23, minutes: 59))))
+                          .snapshots()
+                      : null;
 
                   final officehours3 = isSignedUpForClass3
                       ? FirebaseFirestore.instance
-                      .collection('classes')
-                      .doc('jJTbO8wTb46B27zk8935')
-                      .collection('officehours')
-                      .where('startTime',
-                      isLessThanOrEqualTo: Timestamp.fromDate(
-                          selectedDay.add(Duration(hours: 23, minutes: 59))))
-                      .snapshots()
-                      :null;
-
-
-
+                          .collection('classes')
+                          .doc('jJTbO8wTb46B27zk8935')
+                          .collection('officehours')
+                          .where('startTime',
+                              isLessThanOrEqualTo: Timestamp.fromDate(
+                                  selectedDay
+                                      .add(Duration(hours: 23, minutes: 59))))
+                          .snapshots()
+                      : null;
 
                   return Column(
                     children: [
@@ -203,18 +187,18 @@ class HomePageState extends State<HomePage> {
                             }
                             final events1 = snapshot.data!.docs.where((doc) {
                               final data = doc.data() as Map<String, dynamic>;
-                              final startTime = (data['startTime'] as Timestamp)
-                                  .toDate();
+                              final startTime =
+                                  (data['startTime'] as Timestamp).toDate();
                               return isSameDay(startTime, selectedDay);
                             }).toList();
 
                             return Column(
                               children: events1.map((doc) {
                                 final data = doc.data() as Map<String, dynamic>;
-                                final startTime = (data['startTime'] as Timestamp)
-                                    .toDate();
-                                final endTime = (data['endTime'] as Timestamp)
-                                    .toDate();
+                                final startTime =
+                                    (data['startTime'] as Timestamp).toDate();
+                                final endTime =
+                                    (data['endTime'] as Timestamp).toDate();
                                 final name = data['name'] ?? 'No Title';
                                 final type = data['type'] ?? 'No Type';
                                 return _buildDetailedScheduleTile(
@@ -232,19 +216,18 @@ class HomePageState extends State<HomePage> {
                             }
                             final events2 = snapshot.data!.docs.where((doc) {
                               final data = doc.data() as Map<String, dynamic>;
-                              final startTime = (data['startTime'] as Timestamp)
-                                  .toDate();
+                              final startTime =
+                                  (data['startTime'] as Timestamp).toDate();
                               return isSameDay(startTime, selectedDay);
                             }).toList();
-
 
                             return Column(
                               children: events2.map((doc) {
                                 final data = doc.data() as Map<String, dynamic>;
-                                final startTime = (data['startTime'] as Timestamp)
-                                    .toDate();
-                                final endTime = (data['endTime'] as Timestamp)
-                                    .toDate();
+                                final startTime =
+                                    (data['startTime'] as Timestamp).toDate();
+                                final endTime =
+                                    (data['endTime'] as Timestamp).toDate();
                                 final name = data['name'] ?? 'No Title';
                                 final type = data['type'] ?? 'No Type';
                                 return _buildDetailedScheduleTile(
@@ -262,19 +245,18 @@ class HomePageState extends State<HomePage> {
                             }
                             final events3 = snapshot.data!.docs.where((doc) {
                               final data = doc.data() as Map<String, dynamic>;
-                              final startTime = (data['startTime'] as Timestamp)
-                                  .toDate();
+                              final startTime =
+                                  (data['startTime'] as Timestamp).toDate();
                               return isSameDay(startTime, selectedDay);
                             }).toList();
-
 
                             return Column(
                               children: events3.map((doc) {
                                 final data = doc.data() as Map<String, dynamic>;
-                                final startTime = (data['startTime'] as Timestamp)
-                                    .toDate();
-                                final endTime = (data['endTime'] as Timestamp)
-                                    .toDate();
+                                final startTime =
+                                    (data['startTime'] as Timestamp).toDate();
+                                final endTime =
+                                    (data['endTime'] as Timestamp).toDate();
                                 final name = data['name'] ?? 'No Title';
                                 final type = data['type'] ?? 'No Type';
                                 return _buildDetailedScheduleTile(
@@ -290,35 +272,36 @@ class HomePageState extends State<HomePage> {
                             if (!snapshot.hasData) {
                               return Center(child: CircularProgressIndicator());
                             }
-                            final eventsoffice3 = snapshot.data!.docs.where((doc) {
+                            final eventsoffice3 =
+                                snapshot.data!.docs.where((doc) {
                               final data = doc.data() as Map<String, dynamic>;
-                              final startTime = (data['startTime'] as Timestamp)
-                                  .toDate();
+                              final startTime =
+                                  (data['startTime'] as Timestamp).toDate();
                               return isSameDay(startTime, selectedDay);
                             }).toList();
-
 
                             return Column(
                               children: eventsoffice3.map((doc) {
                                 final data = doc.data() as Map<String, dynamic>;
-                                final startTime = (data['startTime'] as Timestamp)
-                                    .toDate();
-                                final endTime = (data['endTime'] as Timestamp)
-                                    .toDate();
+                                final startTime =
+                                    (data['startTime'] as Timestamp).toDate();
+                                final endTime =
+                                    (data['endTime'] as Timestamp).toDate();
                                 final name = data['name'] ?? 'No Title';
                                 final type = data['type'] ?? 'No Type';
-                                final teacherEmail = data['teacherEmail'] ?? 'No teacher email';
+                                final teacherEmail =
+                                    data['teacherEmail'] ?? 'No teacher email';
                                 // ADD GESTURE DEDECTOR HERE
                                 return GestureDetector(
-                                  onTap: () => _showBookingWindow(context, name, startTime, endTime, teacherEmail),
-                                  child: _buildDetailedScheduleTile(name, startTime, endTime, type),
+                                  onTap: () => _showBookingWindow(context, name,
+                                      startTime, endTime, teacherEmail),
+                                  child: _buildDetailedScheduleTile(
+                                      name, startTime, endTime, type),
                                 );
-
                               }).toList(),
                             );
                           },
                         ),
-
                     ],
                   );
                 },
@@ -330,13 +313,14 @@ class HomePageState extends State<HomePage> {
     ];
   }
 
-
-  void _bookOfficeHour(BuildContext context, String name, DateTime startTime, DateTime endTime, String teacherEmail) async {
+  void _bookOfficeHour(BuildContext context, String name, DateTime startTime,
+      DateTime endTime, String teacherEmail) async {
     final userService = UserService();
     final String? studentEmail = userService.email;
 
     if (studentEmail == null) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('User email not found. Please log in again.')));
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text('User email not found. Please log in again.')));
       return;
     }
 
@@ -358,11 +342,13 @@ class HomePageState extends State<HomePage> {
       'read': false,
     });
 
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Office hour booked successfully.')));
+    ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Office hour booked successfully.')));
     Navigator.of(context).pop();
   }
 
-  void _showBookingWindow(BuildContext context, String name, DateTime startTime, DateTime endTime, String teacherEmail) {
+  void _showBookingWindow(BuildContext context, String name, DateTime startTime,
+      DateTime endTime, String teacherEmail) {
     String startFormatted = DateFormat('HH:mm').format(startTime);
     String endFormatted = DateFormat('HH:mm').format(endTime);
 
@@ -389,7 +375,8 @@ class HomePageState extends State<HomePage> {
             TextButton(
               child: Text('Book'),
               onPressed: () {
-                _bookOfficeHour(context, name, startTime, endTime, teacherEmail);
+                _bookOfficeHour(
+                    context, name, startTime, endTime, teacherEmail);
               },
             ),
           ],
@@ -398,10 +385,14 @@ class HomePageState extends State<HomePage> {
     );
   }
 
-
   List<Widget> _buildTeacherScheduleForSelectedDay(DateTime selectedDay) {
-    final normalizedDay = DateTime(selectedDay.year, selectedDay.month, selectedDay.day);
-    final classIds = ['lkcZRTgbT82iNYfGkwMg', 'jJTbO8wTb46B27zk8935', 'euKvpKCE5ct6dHkAwSvm'];
+    final normalizedDay =
+        DateTime(selectedDay.year, selectedDay.month, selectedDay.day);
+    final classIds = [
+      'lkcZRTgbT82iNYfGkwMg',
+      'jJTbO8wTb46B27zk8935',
+      'euKvpKCE5ct6dHkAwSvm'
+    ];
 
     List<Stream<QuerySnapshot>> streams = classIds.map((classId) {
       return FirebaseFirestore.instance
@@ -409,10 +400,10 @@ class HomePageState extends State<HomePage> {
           .doc(classId)
           .collection('schedule')
           .where('startTime',
-          isGreaterThanOrEqualTo: Timestamp.fromDate(normalizedDay))
+              isGreaterThanOrEqualTo: Timestamp.fromDate(normalizedDay))
           .where('startTime',
-          isLessThanOrEqualTo: Timestamp.fromDate(
-              normalizedDay.add(Duration(hours: 23, minutes: 59))))
+              isLessThanOrEqualTo: Timestamp.fromDate(
+                  normalizedDay.add(Duration(hours: 23, minutes: 59))))
           .snapshots();
     }).toList();
 
@@ -455,9 +446,8 @@ class HomePageState extends State<HomePage> {
     ];
   }
 
-
-
-  Future<bool> _isUserSignedUpOrTeacherCreatedClass(String classId, String email) async {
+  Future<bool> _isUserSignedUpOrTeacherCreatedClass(
+      String classId, String email) async {
     try {
       final studentDocRef = FirebaseFirestore.instance
           .collection('classes')
@@ -483,7 +473,6 @@ class HomePageState extends State<HomePage> {
       return false;
     }
   }
-
 
   Widget _buildDetailedScheduleTile(
       String name, DateTime startTime, DateTime endTime, String type) {
@@ -534,23 +523,6 @@ class HomePageState extends State<HomePage> {
         ],
       ),
     );
-  }
-
-
-  void _saveInfo(String title, DateTime dateTime) {
-    FirebaseFirestore.instance.collection('classes').add({
-      'title': title,
-      'time': '${dateTime.hour}:${dateTime.minute.toString().padLeft(2, '0')}',
-      'date': DateTime(dateTime.year, dateTime.month, dateTime.day),
-    }).then((_){
-      setState(() {
-        _studentSchedule[dateTime] ??= []; //initialize somehow
-        _studentSchedule[dateTime]!.add({
-          'title': title,
-          'time': '${dateTime.hour}:${dateTime.minute.toString().padLeft(2, '0')}',
-        });
-      });
-    });
   }
 
   // Dummy Filter method for Student
@@ -686,6 +658,4 @@ class HomePageState extends State<HomePage> {
       SnackBar(content: Text('$studentName assigned!')),
     );
   }
-
-
 }
