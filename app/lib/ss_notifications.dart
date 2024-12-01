@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:table_calendar/table_calendar.dart';
 import 'navigation.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:intl/intl.dart'; // Add this import for date formatting
 
 class NotificationsPage extends StatefulWidget {
   @override
@@ -13,12 +14,13 @@ class _NotificationsPageState extends State<NotificationsPage> {
 
   @override
   Widget build(BuildContext context) {
-    // Initialize normalizedDay inside the build method
     final normalizedDay = DateTime(_selectedDay.year, _selectedDay.month, _selectedDay.day);
+    final startOfDay = DateTime(normalizedDay.year, normalizedDay.month, normalizedDay.day);
+    final endOfDay = DateTime(normalizedDay.year, normalizedDay.month, normalizedDay.day, 23, 59, 59);
 
     return Scaffold(
       appBar: buildAppBar(
-        'Classes',
+        'Notifications',
         actions: [
           IconButton(
             icon: Icon(Icons.search),
@@ -47,8 +49,9 @@ class _NotificationsPageState extends State<NotificationsPage> {
           Expanded(
             child: StreamBuilder<QuerySnapshot>(
               stream: FirebaseFirestore.instance
-                  .collection('classes')
-                  .where('date', isEqualTo: normalizedDay) // or your date format
+                  .collection('notifications')
+                  .where('timestamp', isGreaterThanOrEqualTo: startOfDay)
+                  .where('timestamp', isLessThanOrEqualTo: endOfDay)
                   .snapshots(),
               builder: (context, snapshot) {
                 if (!snapshot.hasData) {
@@ -64,12 +67,15 @@ class _NotificationsPageState extends State<NotificationsPage> {
                   itemCount: events.length,
                   itemBuilder: (context, index) {
                     final data = events[index].data() as Map<String, dynamic>;
+                    final timestamp = data['timestamp'] as Timestamp;
+                    final formattedDate = DateFormat('yyyy-MM-dd HH:mm:ss').format(timestamp.toDate());
+
                     return Card(
                       margin: EdgeInsets.all(8.0),
                       child: ListTile(
-                        title: Text(data['title'] ?? 'No Title'),
+                        title: Text(data['message'] ?? 'No Title'),
                         subtitle: Text(
-                          '${data['description'] ?? 'No Description'}\n${data['time'] ?? 'No Time'}',
+                          '${data['message'] ?? 'No Description'}\n$formattedDate',
                         ),
                         isThreeLine: true,
                       ),
@@ -111,5 +117,4 @@ class _NotificationsPageState extends State<NotificationsPage> {
     return null;
   }
 }
-
 
