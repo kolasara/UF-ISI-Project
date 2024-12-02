@@ -220,28 +220,24 @@ class Action extends State<ActionPage> {
       return;
     }
     final selectedDays = _dateSelectorKey.currentState?.selection ?? {};
-    final String? selectedType = _typeSelectorKey.currentState?.selection.first.name;
+    final String? selectedType =
+        _typeSelectorKey.currentState?.selection.first.name;
 
     CollectionReference collectionRef;
-    if (selectedType == 'Office') {
-      collectionRef = FirebaseFirestore.instance
-          .collection('classes')
-          .doc(selectedClassId)
-          .collection('officehours');
-    } else {
-      collectionRef = FirebaseFirestore.instance
-          .collection('classes')
-          .doc(selectedClassId)
-          .collection('schedule');
-    }
+    collectionRef = FirebaseFirestore.instance
+        .collection('classes')
+        .doc(selectedClassId)
+        .collection('schedule');
 
     DateTime current = _startDate;
     while (current.isBefore(_endDate) || current.isAtSameMomentAs(_endDate)) {
       // Check if current date matches selected days of the week
       if (selectedDays.contains(_toDaysEnum(current.weekday))) {
         // Get start and end DateTime
-        DateTime startDateTime = DateTime(current.year, current.month, current.day, _startTime.hour, _startTime.minute);
-        DateTime endDateTime = DateTime(current.year, current.month, current.day, _endTime.hour, _endTime.minute);
+        DateTime startDateTime = DateTime(current.year, current.month,
+            current.day, _startTime.hour, _startTime.minute);
+        DateTime endDateTime = DateTime(current.year, current.month,
+            current.day, _endTime.hour, _endTime.minute);
 
         // Add a new document to the collection
         await collectionRef.add({
@@ -254,7 +250,6 @@ class Action extends State<ActionPage> {
       current = current.add(Duration(days: 1));
     }
   }
-
 }
 
 // Type selector
