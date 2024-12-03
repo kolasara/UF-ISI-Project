@@ -1,8 +1,9 @@
+import 'package:app/user_service.dart';
 import 'package:flutter/material.dart';
 import 'package:table_calendar/table_calendar.dart';
 import 'navigation.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:intl/intl.dart'; // Add this import for date formatting
+import 'package:intl/intl.dart';
 
 class NotificationsPage extends StatefulWidget {
   @override
@@ -12,11 +13,21 @@ class NotificationsPage extends StatefulWidget {
 class _NotificationsPageState extends State<NotificationsPage> {
   DateTime _selectedDay = DateTime.now();
 
+  final userService = UserService();
+
   @override
   Widget build(BuildContext context) {
     final normalizedDay = DateTime(_selectedDay.year, _selectedDay.month, _selectedDay.day);
-    final startOfDay = DateTime(normalizedDay.year, normalizedDay.month, normalizedDay.day);
-    final endOfDay = DateTime(normalizedDay.year, normalizedDay.month, normalizedDay.day, 23, 59, 59);
+    final startOfDay = normalizedDay;
+    final endOfDay = normalizedDay.add(Duration(hours: 23, minutes: 59, seconds: 59, milliseconds: 999));
+
+    final String? userEmail = userService.email;
+    final String? userRole = userService.role;
+
+    // Debug Statements
+    print('Start of Day: $startOfDay');
+    print('End of Day: $endOfDay');
+    print('User Role: $userRole');
 
     return Scaffold(
       appBar: buildAppBar(
@@ -52,16 +63,18 @@ class _NotificationsPageState extends State<NotificationsPage> {
                   .collection('notifications')
                   .where('timestamp', isGreaterThanOrEqualTo: startOfDay)
                   .where('timestamp', isLessThanOrEqualTo: endOfDay)
+                  .where('role', isEqualTo: userRole)
                   .snapshots(),
               builder: (context, snapshot) {
-                if (!snapshot.hasData) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
                   return Center(child: CircularProgressIndicator());
                 }
 
-                final events = snapshot.data!.docs;
-                if (events.isEmpty) {
+                if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
                   return Center(child: Text('No events today'));
                 }
+
+                final events = snapshot.data!.docs;
 
                 return ListView.builder(
                   itemCount: events.length,
@@ -73,7 +86,7 @@ class _NotificationsPageState extends State<NotificationsPage> {
                     return Card(
                       margin: EdgeInsets.all(8.0),
                       child: ListTile(
-                        title: Text(data['message'] ?? 'No Title'),
+                        title: Text(data['title'] ?? 'No Title'),
                         subtitle: Text(
                           '${data['message'] ?? 'No Description'}\n$formattedDate',
                         ),
@@ -117,4 +130,3 @@ class _NotificationsPageState extends State<NotificationsPage> {
     return null;
   }
 }
-

@@ -239,7 +239,7 @@ class HomePageState extends State<HomePage> {
       return [];
     }
   }
-
+/*
   void _bookOfficeHour(BuildContext context, String name, DateTime startTime,
       DateTime endTime, String teacherEmail) async {
     final userService = UserService();
@@ -288,6 +288,7 @@ class HomePageState extends State<HomePage> {
       Navigator.of(context).pop(); // Close the loading indicator
     }
   }
+ */
 
   // Dummy Filter method for Student
   void _showFilterWindow(BuildContext context) {
@@ -749,8 +750,23 @@ class _ScheduleDetailPageState extends State<ScheduleDetailPage> {
     );
   }
 
+
   void _cancelOfficeHourBooking() async {
     try {
+      final userService = UserService();
+
+      final String? userEmail = userService.email;
+      final String? userRole = userService.role;
+
+      final userDoc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(userEmail)
+          .get();
+
+      final userName = userDoc.data()?['name'] ?? 'Unknown User';
+      final taNames = tas.map((ta) => ta['name']).join(', ');
+
+      // Delete the booking from Firestore for student
       await FirebaseFirestore.instance
           .collection('classes')
           .doc(widget.classId)
@@ -759,6 +775,35 @@ class _ScheduleDetailPageState extends State<ScheduleDetailPage> {
           .collection('bookings')
           .doc(userEmail)
           .delete();
+
+      // Delete related notifications for student and teacher
+      final notificationQuery = await FirebaseFirestore.instance
+          .collection('notifications')
+          .where('title', isEqualTo: 'Booking Confirmed!')
+          .get();
+
+      if (notificationQuery.docs.isNotEmpty) {
+        for (var doc in notificationQuery.docs) {
+          await FirebaseFirestore.instance
+              .collection('notifications')
+              .doc(doc.id)
+              .delete();
+        }
+      }
+
+      final teacherNotificationQuery = await FirebaseFirestore.instance
+          .collection('notifications')
+          .where('title', isEqualTo: 'New booking made by $userName')
+          .get();
+
+      if (teacherNotificationQuery.docs.isNotEmpty) {
+        for (var doc in teacherNotificationQuery.docs) {
+          await FirebaseFirestore.instance
+              .collection('notifications')
+              .doc(doc.id)
+              .delete();
+        }
+      }
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Booking cancelled successfully.')),
@@ -775,6 +820,8 @@ class _ScheduleDetailPageState extends State<ScheduleDetailPage> {
     }
   }
 
+
+
   void _bookOfficeHour(int currentBookings, int? maxBookings) async {
     if (maxBookings != null && currentBookings >= maxBookings) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -782,7 +829,21 @@ class _ScheduleDetailPageState extends State<ScheduleDetailPage> {
       );
       return;
     }
+
     try {
+      final userService = UserService();
+      final String? userEmail = userService.email;
+      final String? userRole = userService.role;
+
+      final userDoc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(userEmail)
+          .get();
+
+      final userName = userDoc.data()?['name'] ?? 'Unknown User';
+      final taNames = tas.map((ta) => ta['name']).join(', ');
+
+      // Add the booking to Firestore
       await FirebaseFirestore.instance
           .collection('classes')
           .doc(widget.classId)
@@ -791,10 +852,40 @@ class _ScheduleDetailPageState extends State<ScheduleDetailPage> {
           .collection('bookings')
           .doc(userEmail)
           .set({'email': userEmail});
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Office hour booked successfully.')),
-      );
+
+      // Notifications and SnackBar logic based on user role
+      if (userRole == 'Student') {
+        String notificationTitle = 'Booking Confirmed!';
+        String notificationMessage = 'You have successfully booked $taNames office hour.';
+
+        await FirebaseFirestore.instance.collection('notifications').add({
+          'title': notificationTitle,
+          'message': notificationMessage,
+          'timestamp': DateTime.now(),
+          'read': false,
+          'role': 'Student',
+        });
+
+        // Show success message for the student
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Office hour booked successfully.')),
+        );
+
+        // Notify the teacher
+        String teacherNotificationTitle = 'New booking made by $userName';
+        String teacherNotificationMessage = '$userName booked office hours for $taNames.';
+
+        await FirebaseFirestore.instance.collection('notifications').add({
+          'title': teacherNotificationTitle,
+          'message': teacherNotificationMessage,
+          'timestamp': DateTime.now(),
+          'read': false,
+          'role': 'Teacher',
+        });
+      }
+
       setState(() {});
+
     } catch (e) {
       print('Error booking office hour: $e');
       ScaffoldMessenger.of(context).showSnackBar(
@@ -802,6 +893,7 @@ class _ScheduleDetailPageState extends State<ScheduleDetailPage> {
       );
     }
   }
+
 
   Widget _buildProfessorOrTAOfficeHoursView() {
     final TextEditingController maxBookingsController = TextEditingController(
