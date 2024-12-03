@@ -30,7 +30,7 @@ class _LoginPageState extends State<LoginPage> {
         await UserService().fetchUserData(user.user!.uid);
 
         Navigator.pushReplacement(
-          context, // change back if it does not work
+          context,
           MaterialPageRoute(builder: (context) => SsFramework()),
         );
       } catch (e) {
@@ -72,11 +72,14 @@ class _LoginPageState extends State<LoginPage> {
               TextFormField(
                 validator: (input) =>
                     input!.length < 6 ? 'Provide Minimum 6 Characters' : null,
-                decoration: InputDecoration(labelText: 'Password',
+                decoration: InputDecoration(
+                  labelText: 'Password',
                   suffixIcon: IconButton(
                     icon: Icon(
                       // added visibility here
-                      _obscureText ? Icons.visibility : Icons.visibility_outlined,
+                      _obscureText
+                          ? Icons.visibility
+                          : Icons.visibility_outlined,
                     ),
                     onPressed: _passVisibility,
                   ),
