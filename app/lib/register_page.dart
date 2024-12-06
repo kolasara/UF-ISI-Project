@@ -89,7 +89,7 @@ class _RegisterPageState extends State<RegisterPage> {
                       },
                       style: OutlinedButton.styleFrom(
                         backgroundColor:
-                            role == 'Student' ? Colors.blueGrey : null,
+                            role == 'Student' ? Colors.cyan.shade100 : null,
                       ),
                       child: Text('Student')),
                   SizedBox(width: 10),
@@ -101,7 +101,7 @@ class _RegisterPageState extends State<RegisterPage> {
                     },
                     style: OutlinedButton.styleFrom(
                       backgroundColor:
-                          role == 'Teacher' ? Colors.blueGrey : null,
+                          role == 'Teacher' ? Colors.cyan.shade100 : null,
                     ),
                     child: Text('Teacher'),
                   ),
